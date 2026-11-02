@@ -1,0 +1,40 @@
+name: lapticon
+description: "Autenticación Android de Lapticon preparada para Firebase y su API."
+publish_to: 'none'
+version: 0.2.0+2
+
+environment:
+  sdk: ^3.6.2
+
+dependencies:
+  firebase_auth: ^5.7.0
+  firebase_core: ^3.15.2
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  google_sign_in: ^6.3.0
+  http: ^1.6.0
+
+dev_dependencies:
+  integration_test:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-400.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope-500.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-600.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-700.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope-800.ttf
+          weight: 800
