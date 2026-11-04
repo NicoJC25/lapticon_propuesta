@@ -276,16 +276,23 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    const Icon(Icons.flight_takeoff_rounded,
-                        color: AppColors.teal),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: Text(trip.flightNumber,
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.ink))),
+                  // Wrap: con texto grande la etiqueta baja a otra línea.
+                  Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.flight_takeoff_rounded,
+                          color: AppColors.teal),
+                      const SizedBox(width: 10),
+                      Flexible(
+                          child: Text(trip.flightNumber,
+                              style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.ink))),
+                    ]),
                     StatusChip(
                         label: trip.status.label,
                         tone: trip.status == TripStatus.disponible

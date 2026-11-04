@@ -25,16 +25,19 @@ class ShipmentCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(
-                child: Text('${s.origin} → ${s.destination}',
+          // Wrap: con texto grande la etiqueta baja a otra línea.
+          Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('${s.origin} → ${s.destination}',
                     style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.ink))),
-            const SizedBox(width: 8),
-            StatusChip(label: s.status.label, tone: toneFor(s.status)),
-          ]),
+                        color: AppColors.ink)),
+                StatusChip(label: s.status.label, tone: toneFor(s.status)),
+              ]),
           if (s.notes.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(s.notes,
