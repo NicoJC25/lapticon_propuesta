@@ -14,6 +14,7 @@ class AppFailure implements Exception {
 
 abstract class AuthService {
   bool get configured;
+  bool get googleAvailable;
   String? get configurationMessage;
   Stream<AuthUser?> get authChanges;
   Future<AuthUser> signIn(String email, String password);
@@ -32,6 +33,8 @@ class UnconfiguredAuthService implements AuthService {
   final String configurationMessage;
   @override
   bool get configured => false;
+  @override
+  bool get googleAvailable => false;
   @override
   Stream<AuthUser?> get authChanges => Stream.value(null);
   Never _missing() =>

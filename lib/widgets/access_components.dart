@@ -192,7 +192,8 @@ class GoogleAction extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: AuthScope.of(context).canSubmit
+        onPressed: AuthScope.of(context).canSubmit &&
+                AuthScope.of(context).auth.googleAvailable
             ? AuthScope.of(context).google
             : null,
         icon: const ExcludeSemantics(
@@ -201,7 +202,9 @@ class GoogleAction extends StatelessWidget {
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF356AC3)))),
-        label: const Text('Continuar con Google'),
+        label: Text(AuthScope.of(context).auth.googleAvailable
+            ? 'Continuar con Google'
+            : 'Google · Pendiente'),
       ));
 }
 

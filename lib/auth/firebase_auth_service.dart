@@ -30,6 +30,8 @@ class FirebaseAuthService implements AuthService {
   @override
   bool get configured => true;
   @override
+  bool get googleAvailable => false;
+  @override
   String? get configurationMessage => null;
   static AuthUser _user(User? user) {
     if (user == null) {
@@ -67,6 +69,11 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<AuthUser?> signInWithGoogle() async {
+    if (!googleAvailable) {
+      throw const AppFailure(
+          'Google está pendiente de configurar. Ingresa con correo y contraseña.',
+          code: 'google-pending');
+    }
     try {
       final account = await _google.signIn();
       if (account == null) return null;
