@@ -186,6 +186,8 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
     final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+                // Desplazable: con texto grande no cabe en pantallas pequeñas.
+                scrollable: true,
                 title: const Text('¿Cancelar tu viaje?'),
                 content: Text(
                     'El viaje ${trip.flightNumber} de ${trip.origin} a ${trip.destination} dejará de estar disponible.'),

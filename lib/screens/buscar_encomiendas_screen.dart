@@ -78,6 +78,8 @@ class _BuscarEncomiendasScreenState extends State<BuscarEncomiendasScreen> {
     final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+                // Desplazable: con texto grande no cabe en pantallas pequeñas.
+                scrollable: true,
                 title: const Text('¿Tomar esta encomienda?'),
                 content: Text(
                     'Te comprometes a llevarla de ${shipment.origin} a ${shipment.destination}${shipment.value == null ? '' : ' por ${formatMoney(shipment.value!, shipment.currency)}'}. El remitente verá que la tomaste.'),
