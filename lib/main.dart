@@ -8,28 +8,49 @@ import 'theme/app_theme.dart';
 import 'auth/auth_service.dart';
 import 'auth/auth_controller.dart';
 import 'auth/firebase_auth_service.dart';
+import 'data/shipment_repository.dart';
 import 'data/user_repository.dart';
+import 'roles/role_controller.dart';
+import 'roles/role_store.dart';
+import 'screens/role_redirector_screen.dart';
 import 'screens/session_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   var auth = await FirebaseAuthService.bootstrap();
   UserRepository users;
+  ShipmentRepository shipments;
   try {
     users = ApiUserRepository(auth);
+    shipments = ApiShipmentRepository(auth);
   } catch (_) {
     auth = const UnconfiguredAuthService(
         configurationMessage:
             'La dirección API_BASE_URL no es válida. Revisa la configuración local y vuelve a compilar.');
     users = ApiUserRepository(auth,
         baseUrl: 'https://lapticon-backend.onrender.com');
+    shipments = ApiShipmentRepository(auth,
+        baseUrl: 'https://lapticon-backend.onrender.com');
   }
-  runApp(LapticonApp(controller: AuthController(auth, users)));
+  final controller = AuthController(auth, users);
+  runApp(LapticonApp(
+      controller: controller,
+      roles: RoleController(controller, SharedPreferencesRoleStore()),
+      shipments: shipments));
 }
 
 class LapticonApp extends StatefulWidget {
-  const LapticonApp({super.key, this.controller, this.initialRoute = '/'});
+  const LapticonApp(
+      {super.key,
+      this.controller,
+      this.roles,
+      this.shipments,
+      this.initialRoute = '/'});
   final AuthController? controller;
+
+  /// Sin inyectar se usa una caché de rol en memoria.
+  final RoleController? roles;
+  final ShipmentRepository? shipments;
   final String initialRoute;
   @override
   State<LapticonApp> createState() => _LapticonAppState();
@@ -38,6 +59,8 @@ class LapticonApp extends StatefulWidget {
 class _LapticonAppState extends State<LapticonApp> {
   final _navigator = GlobalKey<NavigatorState>();
   late final AuthController _controller;
+  late final RoleController _roles;
+  late final ShipmentRepository _shipments;
   bool _wasSignedIn = false;
   @override
   void initState() {
@@ -45,6 +68,9 @@ class _LapticonAppState extends State<LapticonApp> {
     _controller = widget.controller ??
         AuthController(const UnconfiguredAuthService(),
             ApiUserRepository(const UnconfiguredAuthService()));
+    _roles = widget.roles ?? RoleController(_controller, MemoryRoleStore());
+    _shipments = widget.shipments ??
+        ApiShipmentRepository(const UnconfiguredAuthService());
     _controller.addListener(_sessionChanged);
   }
 
@@ -63,6 +89,8 @@ class _LapticonAppState extends State<LapticonApp> {
   @override
   void dispose() {
     _controller.removeListener(_sessionChanged);
+    if (widget.roles == null) _roles.dispose();
+    if (widget.shipments == null) _shipments.close();
     if (widget.controller == null) _controller.dispose();
     super.dispose();
   }
@@ -76,7 +104,13 @@ class _LapticonAppState extends State<LapticonApp> {
                 return const Scaffold(
                     body: Center(child: CircularProgressIndicator()));
               }
-              if (_controller.signedIn) return const SessionScreen();
+              if (_controller.signedIn) {
+                // Con perfil completo se decide el menú por rol; el resto de
+                // fases (cargando, perfil pendiente, error) siguen en sesión.
+                return _controller.phase == SessionPhase.ready
+                    ? const RoleRedirectorScreen()
+                    : const SessionScreen();
+              }
               return switch (settings.name) {
                 '/' => const WelcomeScreen(),
                 '/register' => const RegisterScreen(),
@@ -89,7 +123,11 @@ class _LapticonAppState extends State<LapticonApp> {
   @override
   Widget build(BuildContext context) => AuthScope(
       controller: _controller,
-      child: MaterialApp(
+      child: RoleScope(
+          controller: _roles,
+          child: ShipmentScope(
+              repository: _shipments,
+              child: MaterialApp(
         navigatorKey: _navigator,
         title: 'Lapticon · Cada viaje conecta',
         debugShowCheckedModeBanner: false,
@@ -100,5 +138,5 @@ class _LapticonAppState extends State<LapticonApp> {
         initialRoute: widget.initialRoute,
         onGenerateInitialRoutes: (name) => [_route(RouteSettings(name: name))],
         onGenerateRoute: _route,
-      ));
+      ))));
 }

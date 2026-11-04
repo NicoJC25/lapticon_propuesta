@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:lapticon/auth/auth_service.dart';
+import 'package:lapticon/data/shipment_repository.dart';
 import 'package:lapticon/data/user_repository.dart';
+import 'package:lapticon/roles/user_role.dart';
 
 const testUser = AuthUser(uid: 'u-123', email: 'ana@example.com');
 const testProfile = UserProfile(
@@ -99,5 +101,63 @@ class FakeUserRepository extends UserRepository {
     if (createFailure != null) throw createFailure!;
     return stored = UserProfile(
         uid: user.uid, email: user.email, name: name, surname: surname);
+  }
+
+  /// Simula si el backend conserva `rol`: hoy su modelo no lo tiene.
+  bool serverKeepsRole = false;
+  AppFailure? roleFailure;
+  final savedRoles = <UserRole>[];
+  @override
+  Future<UserRole?> saveRole(
+      AuthUser user, UserProfile profile, UserRole role) async {
+    savedRoles.add(role);
+    if (roleFailure != null) throw roleFailure!;
+    if (!serverKeepsRole) return null;
+    stored = UserProfile(
+        uid: profile.uid,
+        email: profile.email,
+        name: profile.name,
+        surname: profile.surname,
+        role: role);
+    return role;
+  }
+}
+
+class FakeShipmentRepository extends ShipmentRepository {
+  final places = <String, List<String>>{
+    'Colombia': ['Bogotá', 'Medellin', 'Cali'],
+    'España': ['Madrid', 'Barcelona'],
+  };
+  AppFailure? createFailure;
+  AppFailure? placesFailure;
+  final created = <ShipmentDraft>[];
+  Completer<void>? gate;
+
+  @override
+  Future<List<String>> countries() async {
+    if (placesFailure != null) throw placesFailure!;
+    return places.keys.toList();
+  }
+
+  @override
+  Future<List<String>> cities(String country) async {
+    if (placesFailure != null) throw placesFailure!;
+    return places[country] ?? const [];
+  }
+
+  @override
+  Future<Shipment> create(ShipmentDraft draft) async {
+    created.add(draft);
+    if (gate != null) await gate!.future;
+    if (createFailure != null) throw createFailure!;
+    return Shipment(
+        id: 'enc-${created.length}',
+        origin: draft.origin.city,
+        destination: draft.destination.city,
+        notes: draft.notes.trim(),
+        currency: draft.currency,
+        value: draft.value,
+        status: ShipmentStatus.disponible,
+        expiresAt: draft.expiresOn);
   }
 }

@@ -102,12 +102,12 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(1), 'demo123');
     await tapVisible(
         tester, find.widgetWithText(FilledButton, 'Iniciar sesión'));
-    expect(find.text('Tu sesión\nestá lista.'), findsOneWidget);
+    expect(find.text('¿Cómo quieres\nusar Lapticon?'), findsOneWidget);
     expect(find.text('Hola, Ana Gómez.'), findsOneWidget);
     expect(users.writes, 0);
     await tapVisible(tester, find.text('Cerrar sesión'));
     expect(find.text('Qué bueno\nverte de nuevo.'), findsOneWidget);
-    expect(find.text('Tu sesión\nestá lista.'), findsNothing);
+    expect(find.text('¿Cómo quieres\nusar Lapticon?'), findsNothing);
   });
 
   testWidgets(
@@ -136,7 +136,7 @@ void main() {
     expect(find.text('Falta conectar\ntu perfil.'), findsOneWidget);
     users.createFailure = null;
     await tapVisible(tester, find.text('Reintentar perfil'));
-    expect(find.text('Tu sesión\nestá lista.'), findsOneWidget);
+    expect(find.text('¿Cómo quieres\nusar Lapticon?'), findsOneWidget);
     expect(auth.registerCalls, 1);
   });
 
@@ -181,7 +181,7 @@ void main() {
       (tester) async {
     await open(tester, '/home');
     expect(find.text('Qué bueno\nverte de nuevo.'), findsOneWidget);
-    expect(find.text('Tu sesión\nestá lista.'), findsNothing);
+    expect(find.text('¿Cómo quieres\nusar Lapticon?'), findsNothing);
   });
   testWidgets('Sesión restaurada entra protegida; expiración vuelve al login',
       (tester) async {
@@ -190,7 +190,7 @@ void main() {
     users.stored = testProfile;
     controller = AuthController(auth, users);
     await open(tester, '/home');
-    expect(find.text('Tu sesión\nestá lista.'), findsOneWidget);
+    expect(find.text('¿Cómo quieres\nusar Lapticon?'), findsOneWidget);
     expect(auth.loginCalls, 0);
     auth.changes.add(null);
     await tester.pumpAndSettle();
