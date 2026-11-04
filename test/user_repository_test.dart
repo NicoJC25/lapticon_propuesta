@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:lapticon/auth/auth_service.dart';
 import 'package:lapticon/data/user_repository.dart';
+import 'package:lapticon/roles/user_role.dart';
 import 'fakes.dart';
 
 http.Response profileResponse() => http.Response(
@@ -135,5 +136,50 @@ void main() {
       expect(() => ApiUserRepository(auth, baseUrl: url),
           throwsA(failure('configuration')));
     }
+  });
+  test('Perfil con rol en el servidor lo interpreta', () async {
+    final repo = ApiUserRepository(auth,
+        client: MockClient((_) async => http.Response(
+            jsonEncode({
+              'user': {
+                'uid': 'u-123',
+                'nombre': 'Ana',
+                'apellido': 'Gómez',
+                'rol': 'viajero'
+              }
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'})));
+    expect((await repo.fetch(testUser))!.role, UserRole.viajero);
+    repo.close();
+  });
+  test('saveRole usa PUT del dueño, conserva nombre y no envía uid ni correo',
+      () async {
+    final requests = <http.Request>[];
+    var keepsRole = true;
+    final repo = ApiUserRepository(auth, client: MockClient((r) async {
+      requests.add(r);
+      return http.Response(
+          jsonEncode({
+            'uid': 'u-123',
+            'nombre': 'Ana',
+            'apellido': 'Gómez',
+            if (keepsRole) 'rol': 'remitente'
+          }),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
+    }));
+    expect(await repo.saveRole(testUser, testProfile, UserRole.remitente),
+        UserRole.remitente);
+    expect(requests.single.method, 'PUT');
+    expect(requests.single.url.path, '/api/users/u-123');
+    expect(
+        requests.single.headers['Authorization'], 'Bearer initial-test-token');
+    expect(jsonDecode(requests.single.body),
+        {'nombre': 'Ana', 'apellido': 'Gómez', 'rol': 'remitente'});
+    keepsRole = false;
+    expect(
+        await repo.saveRole(testUser, testProfile, UserRole.remitente), isNull);
+    repo.close();
   });
 }
