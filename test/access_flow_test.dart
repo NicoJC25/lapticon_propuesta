@@ -140,6 +140,25 @@ void main() {
     expect(auth.registerCalls, 1);
   });
 
+  testWidgets('Google pendiente no permite iniciar con ese proveedor',
+      (tester) async {
+    auth.googleAvailable = false;
+    await open(tester, '/login');
+    expect(
+        tester
+            .widget<OutlinedButton>(
+                find.byWidgetPredicate((widget) => widget is OutlinedButton))
+            .onPressed,
+        isNull);
+    expect(auth.googleCalls, 0);
+    expect(
+        tester
+            .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Iniciar sesión'))
+            .onPressed,
+        isNotNull);
+  });
+
   testWidgets(
       'Google cancelado no muestra error; usuario nuevo completa perfil',
       (tester) async {

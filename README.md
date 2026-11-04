@@ -2,13 +2,13 @@
 
 Flujo de autenticación Android implementado con Flutter: correo y contraseña, Google, registro, recuperación, restauración y cierre de sesión. Conserva las cuatro pantallas del prototipo y agrega inicio protegido y finalización del perfil.
 
-**Estado actual:** falta el Firebase del profesor. El APK arranca con **Conexión con Firebase pendiente** y bloquea las operaciones de autenticación. No hay un modo de sesión falsa. Los servicios simulados existen solo en las pruebas.
+**Estado actual:** Android usa `com.lapticon.app` y el proyecto Firebase `lapticon-eba31`. El archivo del profesor se coloca localmente en `android/app/google-services.json` (ignorado por Git). Correo, registro y recuperación usan Firebase; Google permanece deshabilitado hasta registrar la firma SHA-1 y actualizar la configuración. Sin el archivo, la app sigue mostrando la conexión pendiente.
 
 Consulta **[CONEXION_FIREBASE.md](CONEXION_FIREBASE.md)** para completar la conexión, registrar la firma Android y configurar la dirección de la API. No introduzcas contraseñas administrativas ni claves de Firebase Admin en la app.
 
 ## Ejecutar en Android
 
-Abre esta carpeta, donde está `pubspec.yaml`, en Android Studio. Inicia un emulador o conecta un teléfono por USB. Conserva JDK 17 para Gradle 8.3. En este computador, `android/gradle.properties` ya contiene su ruta; adáptala si cambias de equipo.
+Abre esta carpeta, donde está `pubspec.yaml`, en Android Studio. Inicia un emulador o conecta un teléfono por USB. Conserva JDK 17 para Gradle 8.3. Si necesitas especificar su ruta, configúrala en tu archivo de usuario `~/.gradle/gradle.properties`, sin subir rutas personales al repositorio.
 
 Desde PowerShell en esta carpeta:
 
@@ -54,7 +54,7 @@ powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 test
 powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 build apk --debug
 ```
 
-Las pruebas verifican validación, errores, cancelación de Google, reintento de perfil, sesión restaurada, acceso protegido, cierre y limpieza de sesión, concurrencia de envíos, contrato HTTP y renovación limitada de tokens. También revisan el contraste y diseños de 320×568, 430×932 y 1280×800 con texto al 200 % y teclado simulado.
+Las pruebas verifican validación, errores, cancelación de Google, reintento de perfil, sesión restaurada, acceso protegido, cierre y limpieza de sesión, concurrencia de envíos, contrato HTTP y renovación limitada de tokens. También revisan el contraste y diseños de 320Ã—568, 430Ã—932 y 1280Ã—800 con texto al 200 % y teclado simulado.
 
 Con un emulador encendido y **sin** `google-services.json`, la prueba de integración verifica la conexión pendiente y guarda una captura de la pantalla de login:
 
