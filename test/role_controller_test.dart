@@ -19,10 +19,12 @@ void main() {
   late MemoryRoleStore store;
   late AuthController controller;
   late RoleController roles;
+  var started = false;
 
   Future<void> start() async {
     controller = AuthController(auth, users);
     roles = RoleController(controller, store);
+    started = true;
     await flush();
   }
 
@@ -32,8 +34,12 @@ void main() {
     store = MemoryRoleStore();
   });
   tearDown(() async {
-    roles.dispose();
-    controller.dispose();
+    // Solo se liberan los controladores que creó esta prueba.
+    if (started) {
+      roles.dispose();
+      controller.dispose();
+      started = false;
+    }
     await auth.close();
   });
 

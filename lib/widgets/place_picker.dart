@@ -27,7 +27,7 @@ class PlacePickerField extends FormField<Place> {
                 backgroundColor: AppColors.paper,
                 builder: (_) =>
                     PlaceSheet(title: label, repository: repository));
-            if (place != null) {
+            if (place != null && state.mounted) {
               state.didChange(place);
               onChanged?.call(place);
             }

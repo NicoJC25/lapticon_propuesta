@@ -39,6 +39,7 @@ void main() {
   late MemoryRoleStore store;
   late AuthController controller;
   late RoleController roles;
+  var started = false;
 
   setUp(() {
     auth = FakeAuthService(user: testUser);
@@ -47,14 +48,19 @@ void main() {
     store = MemoryRoleStore();
   });
   tearDown(() async {
-    roles.dispose();
-    controller.dispose();
+    // Solo se liberan los controladores que creó esta prueba.
+    if (started) {
+      roles.dispose();
+      controller.dispose();
+      started = false;
+    }
     await auth.close();
   });
 
   Widget app() {
     controller = AuthController(auth, users);
     roles = RoleController(controller, store);
+    started = true;
     return LapticonApp(
         controller: controller,
         roles: roles,
