@@ -7,7 +7,7 @@ import 'package:lapticon/main.dart';
 import 'package:lapticon/roles/role_controller.dart';
 import 'package:lapticon/roles/role_store.dart';
 import 'package:lapticon/roles/user_role.dart';
-import 'package:lapticon/screens/crear_encomienda_screen.dart';
+import 'package:lapticon/utils/format.dart';
 import 'fakes.dart';
 
 Future<void> tapVisible(WidgetTester tester, Finder finder) async {
@@ -92,7 +92,7 @@ void main() {
     store.roles['u-123'] = UserRole.viajero;
     await open(tester);
     expect(find.text(travelerTitle), findsOneWidget);
-    expect(find.text('Registrar viaje'), findsOneWidget);
+    expect(find.text('Mi viaje'), findsOneWidget);
     await tapVisible(tester, find.text('Cambiar de rol'));
     expect(find.text(selectionTitle), findsOneWidget);
     expect(store.roles.containsKey('u-123'), isFalse);

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../auth/auth_service.dart';
 import '../data/shipment_repository.dart';
 import '../theme/app_theme.dart';
+import '../utils/format.dart';
 import '../widgets/access_components.dart';
 import '../widgets/access_shell.dart';
 import '../widgets/app_components.dart';
@@ -255,7 +256,7 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
     final askedDate = sent.expiresOn != null;
     String expiry;
     if (created.expiresAt != null) {
-      expiry = formatDate(created.expiresAt!.toLocal());
+      expiry = formatDate(created.expiresAt!);
     } else {
       expiry = askedDate
           ? 'El servidor no confirmó la fecha elegida'
@@ -329,19 +330,4 @@ class _SummaryRow extends StatelessWidget {
             style: const TextStyle(
                 fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink)),
       ]));
-}
-
-String formatDate(DateTime date) =>
-    '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-
-/// 50000 COP → "$ 50.000 COP".
-String formatMoney(num value, String currency) {
-  final whole = value.round().abs().toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < whole.length; i++) {
-    if (i > 0 && (whole.length - i) % 3 == 0) buffer.write('.');
-    buffer.write(whole[i]);
-  }
-  final sign = value < 0 ? '-' : '';
-  return '$sign\$ ${buffer.toString()} $currency'.trim();
 }

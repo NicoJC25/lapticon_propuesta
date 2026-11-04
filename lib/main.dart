@@ -9,6 +9,7 @@ import 'auth/auth_service.dart';
 import 'auth/auth_controller.dart';
 import 'auth/firebase_auth_service.dart';
 import 'data/shipment_repository.dart';
+import 'data/trip_repository.dart';
 import 'data/user_repository.dart';
 import 'roles/role_controller.dart';
 import 'roles/role_store.dart';
@@ -20,9 +21,11 @@ Future<void> main() async {
   var auth = await FirebaseAuthService.bootstrap();
   UserRepository users;
   ShipmentRepository shipments;
+  TripRepository trips;
   try {
     users = ApiUserRepository(auth);
     shipments = ApiShipmentRepository(auth);
+    trips = ApiTripRepository(auth);
   } catch (_) {
     auth = const UnconfiguredAuthService(
         configurationMessage:
@@ -31,12 +34,15 @@ Future<void> main() async {
         baseUrl: 'https://lapticon-backend.onrender.com');
     shipments = ApiShipmentRepository(auth,
         baseUrl: 'https://lapticon-backend.onrender.com');
+    trips = ApiTripRepository(auth,
+        baseUrl: 'https://lapticon-backend.onrender.com');
   }
   final controller = AuthController(auth, users);
   runApp(LapticonApp(
       controller: controller,
       roles: RoleController(controller, SharedPreferencesRoleStore()),
-      shipments: shipments));
+      shipments: shipments,
+      trips: trips));
 }
 
 class LapticonApp extends StatefulWidget {
@@ -45,12 +51,14 @@ class LapticonApp extends StatefulWidget {
       this.controller,
       this.roles,
       this.shipments,
+      this.trips,
       this.initialRoute = '/'});
   final AuthController? controller;
 
   /// Sin inyectar se usa una caché de rol en memoria.
   final RoleController? roles;
   final ShipmentRepository? shipments;
+  final TripRepository? trips;
   final String initialRoute;
   @override
   State<LapticonApp> createState() => _LapticonAppState();
@@ -61,6 +69,7 @@ class _LapticonAppState extends State<LapticonApp> {
   late final AuthController _controller;
   late final RoleController _roles;
   late final ShipmentRepository _shipments;
+  late final TripRepository _trips;
   bool _wasSignedIn = false;
   @override
   void initState() {
@@ -71,6 +80,8 @@ class _LapticonAppState extends State<LapticonApp> {
     _roles = widget.roles ?? RoleController(_controller, MemoryRoleStore());
     _shipments = widget.shipments ??
         ApiShipmentRepository(const UnconfiguredAuthService());
+    _trips =
+        widget.trips ?? ApiTripRepository(const UnconfiguredAuthService());
     _controller.addListener(_sessionChanged);
   }
 
@@ -91,6 +102,7 @@ class _LapticonAppState extends State<LapticonApp> {
     _controller.removeListener(_sessionChanged);
     if (widget.roles == null) _roles.dispose();
     if (widget.shipments == null) _shipments.close();
+    if (widget.trips == null) _trips.close();
     if (widget.controller == null) _controller.dispose();
     super.dispose();
   }
@@ -127,6 +139,8 @@ class _LapticonAppState extends State<LapticonApp> {
           controller: _roles,
           child: ShipmentScope(
               repository: _shipments,
+              child: TripScope(
+              repository: _trips,
               child: MaterialApp(
         navigatorKey: _navigator,
         title: 'Lapticon · Cada viaje conecta',
@@ -138,5 +152,5 @@ class _LapticonAppState extends State<LapticonApp> {
         initialRoute: widget.initialRoute,
         onGenerateInitialRoutes: (name) => [_route(RouteSettings(name: name))],
         onGenerateRoute: _route,
-      ))));
+      )))));
 }

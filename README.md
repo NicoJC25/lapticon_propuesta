@@ -1,6 +1,6 @@
 # Lapticon para Android
 
-Aplicación Android en Flutter. **Fase 1:** autenticación con correo y contraseña, Google, registro, recuperación, restauración y cierre de sesión. **Fase 2:** selección de rol (remitente o viajero), menús por rol y creación de encomiendas con `POST /api/encomiendas`.
+Aplicación Android en Flutter. **Fase 1:** autenticación con correo y contraseña, Google, registro, recuperación, restauración y cierre de sesión. **Fase 2:** selección de rol (remitente o viajero), menús por rol y creación de encomiendas con `POST /api/encomiendas`. **Semana 3:** Mis encomiendas por estado, registro de viaje con validación del vuelo, y búsqueda y toma de encomiendas.
 
 **Estado actual:** falta el Firebase del profesor. El APK arranca con **Conexión con Firebase pendiente** y bloquea las operaciones de autenticación. No hay un modo de sesión falsa. Los servicios simulados existen solo en las pruebas.
 
@@ -53,14 +53,31 @@ Login ─► Perfil completo ─► RoleRedirectorScreen ─┬─► Elegir rol
 
 Preguntas abiertas para el profesor: si el backend agregará `rol` al modelo `Usuario`, si el `POST` acepta `fechaVencimiento` y qué valores admite `moneda`.
 
+## Semana 3: viajes, búsqueda y toma de encomiendas
+
+Corresponde a las prácticas 3 y 4 (listas por estado, registro de viaje validado y tomar encomienda).
+
+```
+Remitente: Menú ─► Mis encomiendas (disponibles · tomadas · recibidas · vencidas)
+Viajero:   Menú ─► Mi viaje ─► validar vuelo ─► POST /api/viajes ─► Buscar encomiendas de mi ruta ─► Tomar
+```
+
+- **Mis encomiendas (remitente).** `GET /api/encomiendas`, agrupadas por estado con filtros y conteo. El backend marca las vencidas al consultar, así que la lista se refresca con **Actualizar** y al volver de crear una.
+- **Mi viaje (viajero).** Si hay viaje disponible (`GET /api/viajes/disponible`) se muestra con opción de buscar encomiendas o **Cancelar viaje** (`PATCH /api/viajes/{id}/estado` con `cancelado`). Si no, formulario: número de vuelo (código de aerolínea + número, p. ej. `AV9361`), fecha, origen y destino.
+- **Validación del vuelo.** Antes de registrar se consulta `GET /api/vuelos/{numero}/{fecha}`. Si el vuelo no existe se bloquea el registro. **Hoy el servidor responde `500 RAPIDAPI_KEY no está configurada`**, así que la app avisa que no pudo validar y ofrece **Registrar sin validar**. Cuando el profesor configure la clave, la validación funcionará sin cambios en la app.
+- **Buscar y tomar.** Con la ruta del viaje activo se llama `GET /api/encomiendas/buscar` (`{ disponibles, tomadas }`). **Tomar** pide confirmación y usa `PUT /api/encomiendas/tomar/{id}`; si otro viajero la tomó antes, se muestra el mensaje de la API y se recarga la lista.
+- **Fechas.** Las fechas sin hora de la API (`2026-11-07T00:00:00.000Z`) se muestran en UTC para que en Colombia no aparezcan como el día anterior.
+- **Pendiente para la semana 4:** marcar como recibida, calificar y chat.
+
 ## Organización
 
 | Elemento | Responsabilidad |
 | --- | --- |
 | `lib/auth/` | Contrato de autenticación, adaptador Firebase, estado de sesión y operaciones |
-| `lib/data/` | Cliente HTTP compartido (`api_client.dart`), perfiles y encomiendas |
+| `lib/data/` | Cliente HTTP compartido (`api_client.dart`), perfiles, encomiendas y viajes |
+| `lib/utils/` | Formatos de fecha y dinero |
 | `lib/roles/` | Rol del usuario, caché por uid y `RoleController` |
-| `lib/screens/` | Acceso (fase 1); selección de rol, redirector, menús y crear encomienda (fase 2) |
+| `lib/screens/` | Acceso (fase 1); rol, menús y crear encomienda (fase 2); mis encomiendas, mi viaje y buscar (semana 3) |
 | `lib/widgets/` y `lib/theme/` | Componentes visuales, accesibilidad, tema e ilustración local |
 | `config/android.example.json` | Ejemplo de `API_BASE_URL`; no contiene valores secretos |
 | `test/` | Pruebas de servicios, API e interfaz con servicios simulados |
