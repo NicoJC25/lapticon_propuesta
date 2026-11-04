@@ -26,6 +26,8 @@ class FakeAuthService implements AuthService {
   @override
   bool get configured => true;
   @override
+  bool googleAvailable = true;
+  @override
   String? get configurationMessage => null;
   @override
   Stream<AuthUser?> get authChanges async* {

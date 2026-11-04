@@ -1,4 +1,4 @@
-package com.lapticon.lapticon
+package com.lapticon.app
 
 import io.flutter.embedding.android.FlutterActivity
 
