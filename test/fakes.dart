@@ -215,7 +215,7 @@ Shipment shipment(String id,
 class FakeTripRepository extends TripRepository {
   Trip? activeTrip;
   FlightCheck check = const FlightCheck(FlightCheckResult.found,
-      summary: 'Avianca · Bogotá → Madrid');
+      summary: 'Avianca · Bogotá → Miami');
   AppFailure? registerFailure, activeFailure;
   final registered = <TripDraft>[];
   final checks = <(String, DateTime)>[];

@@ -9,6 +9,8 @@ import '../widgets/access_shell.dart';
 import '../widgets/app_components.dart';
 import '../widgets/date_field.dart';
 import '../widgets/place_picker.dart';
+import '../widgets/flight_city_field.dart';
+import '../data/flight_city.dart';
 import '../widgets/shipment_card.dart';
 import 'buscar_encomiendas_screen.dart';
 import 'flight_search_screen.dart';
@@ -376,7 +378,6 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
       ]);
 
   Widget _formView() {
-    final places = ShipmentScope.of(context);
     final enabled = !_busy;
     return Form(
         key: _form,
@@ -413,29 +414,25 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
                     _date = date;
                     _unverifiedReason = null;
                   })),
-          PlacePickerField(
+          FlightCityField(
               key: const ValueKey('campo-origen'),
               label: 'Origen',
-              hint: 'Ciudad de salida',
-              icon: Icons.trip_origin_rounded,
-              repository: places,
+              value: FlightCity.fromPlace(_origin),
               enabled: enabled,
               validator: (place) =>
                   place == null ? 'Elige la ciudad de origen.' : null,
               onChanged: (place) => setState(() {
-                    _origin = place;
+                    _origin = place.place;
                     _unverifiedReason = null;
                   })),
-          PlacePickerField(
+          FlightCityField(
               key: const ValueKey('campo-destino'),
               label: 'Destino',
-              hint: 'Ciudad de llegada',
-              icon: Icons.place_outlined,
-              repository: places,
+              value: FlightCity.fromPlace(_destination),
               enabled: enabled,
-              validator: _validateDestination,
+              validator: (city) => _validateDestination(city?.place),
               onChanged: (place) => setState(() {
-                    _destination = place;
+                    _destination = place.place;
                     _unverifiedReason = null;
                   })),
           const SizedBox(height: 6),

@@ -4,6 +4,7 @@ import 'package:lapticon/auth/auth_controller.dart';
 import 'package:lapticon/auth/auth_service.dart';
 import 'package:lapticon/data/shipment_repository.dart';
 import 'package:lapticon/data/trip_repository.dart';
+import 'package:lapticon/data/flight_city.dart';
 import 'package:lapticon/main.dart';
 import 'package:lapticon/roles/role_controller.dart';
 import 'package:lapticon/roles/role_store.dart';
@@ -22,11 +23,14 @@ Future<void> tapVisible(WidgetTester tester, Finder finder) async {
 Finder fieldTap(String key) => find.descendant(
     of: find.byKey(ValueKey(key)), matching: find.byType(InkWell));
 
-Future<void> pickPlace(
-    WidgetTester tester, String key, String country, String city) async {
-  await tapVisible(tester, fieldTap(key));
-  await tapVisible(tester, find.text(country));
-  await tapVisible(tester, find.text(city));
+Future<void> pickFlightCity(
+    WidgetTester tester, String key, String city) async {
+  await tapVisible(
+      tester,
+      find.descendant(
+          of: find.byKey(ValueKey(key)),
+          matching: find.byType(DropdownButton<FlightCity>)));
+  await tapVisible(tester, find.text(city).last);
 }
 
 /// Abre el calendario y acepta la fecha propuesta (hoy).
@@ -129,8 +133,8 @@ void main() {
       await tester.enterText(
           find.byKey(const ValueKey('campo-vuelo')), 'av 9361');
       await pickToday(tester);
-      await pickPlace(tester, 'campo-origen', 'Colombia', 'Bogotá');
-      await pickPlace(tester, 'campo-destino', 'España', 'Madrid');
+      await pickFlightCity(tester, 'campo-origen', 'Bogotá');
+      await pickFlightCity(tester, 'campo-destino', 'Miami');
     }
 
     testWidgets('Valida campos, comprueba el vuelo y registra', (tester) async {
@@ -160,12 +164,12 @@ void main() {
       expect(trips.registered.single.toJson(), {
         'numeroVuelo': 'AV9361',
         'ciudadOrigen': 'Bogotá',
-        'ciudadDestino': 'Madrid',
+        'ciudadDestino': 'Miami',
         'fechaViaje': isoDate(today),
       });
       expect(find.text('Tu viaje\nestá activo.'), findsOneWidget);
       expect(find.text('AV9361'), findsOneWidget);
-      expect(find.text('Vuelo validado: Avianca · Bogotá → Madrid.'),
+      expect(find.text('Vuelo validado: Avianca · Bogotá → Miami.'),
           findsOneWidget);
     });
 
@@ -204,7 +208,7 @@ void main() {
       await fillTrip(tester);
       await tapVisible(tester, find.text('Validar vuelo y registrar'));
       expect(find.text('Registrar sin validar'), findsOneWidget);
-      await pickPlace(tester, 'campo-origen', 'España', 'Madrid');
+      await pickFlightCity(tester, 'campo-origen', 'Miami');
       expect(find.text('Registrar sin validar'), findsNothing);
       await tapVisible(tester, find.text('Validar vuelo y registrar'));
       expect(find.text('El destino debe ser diferente del origen.'),

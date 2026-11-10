@@ -7,6 +7,7 @@ import 'package:lapticon/auth/auth_service.dart';
 import 'package:lapticon/auth/auth_controller.dart';
 import 'package:lapticon/data/flight_catalog.dart';
 import 'package:lapticon/data/trip_repository.dart';
+import 'package:lapticon/data/flight_city.dart';
 import 'package:lapticon/screens/flight_search_screen.dart';
 import 'package:lapticon/theme/app_theme.dart';
 import 'fakes.dart';
@@ -23,7 +24,12 @@ class CatalogTrips extends FakeTripRepository {
   @override
   Future<List<FlightOption>> searchFlights(
           String origin, String destination, String date) async =>
-      [FlightOption.fromJson(flight(date))];
+      [
+        FlightOption.fromJson({
+          ...flight(date, destination: destination),
+          'destination': {'iata': destination, 'city': 'Miami', 'country': 'US'}
+        })
+      ];
 }
 
 void main() {
@@ -101,8 +107,31 @@ void main() {
                       child: const Text('Abrir'))))));
       await tester.tap(find.text('Abrir'));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField).at(0), 'BOG');
-      await tester.enterText(find.byType(TextFormField).at(1), 'MAD');
+      for (final field in tester.widgetList<DropdownButton<FlightCity>>(
+          find.byType(DropdownButton<FlightCity>))) {
+        expect(field.items!.map((i) => (i.child as Text).data),
+            ['Bogotá', 'Medellín', 'Cali', 'New York', 'Miami', 'Washington']);
+      }
+      Future<void> choose(String key, String city) async {
+        final dropdown = find.descendant(
+            of: find.byKey(ValueKey(key)),
+            matching: find.byType(DropdownButton<FlightCity>));
+        await tester.ensureVisible(dropdown);
+        await tester.tap(dropdown);
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text(city).last);
+        await tester.tap(find.text(city).last);
+        await tester.pumpAndSettle();
+      }
+
+      await choose('vuelo-origen', 'Bogotá');
+      await choose('vuelo-destino', 'Bogotá');
+      await tester.ensureVisible(find.text('Buscar vuelos'));
+      await tester.tap(find.text('Buscar vuelos'));
+      await tester.pumpAndSettle();
+      expect(find.text('El destino debe ser diferente del origen.'),
+          findsOneWidget);
+      await choose('vuelo-destino', 'Miami');
       await tester.ensureVisible(find.text('Buscar vuelos'));
       await tester.tap(find.text('Buscar vuelos'));
       await tester.pumpAndSettle();
@@ -110,6 +139,7 @@ void main() {
       await tester.tap(find.text('AV40 · Avianca'));
       await tester.pumpAndSettle();
       expect(chosen?.flightNumber, 'AV40');
+      expect(chosen?.destination.city, 'Miami');
       expect(trips.registered, isEmpty);
     });
   }

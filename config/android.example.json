@@ -1,5 +1,5 @@
 {
   "API_BASE_URL": "https://lapticon-backend.onrender.com",
-  "FLIGHT_SEARCH_BASE_URL": "",
+  "FLIGHT_SEARCH_BASE_URL": "https://lapticon-propuesta.onrender.com",
   "GOOGLE_SIGN_IN_ENABLED": false
 }

@@ -2,7 +2,9 @@
 
 ## Vuelos por ruta
 
-En **Mi viaje → Buscar vuelo por origen y destino**, usa la lupa para buscar un aeropuerto por ciudad (o escribe su código IATA, por ejemplo BOG/MAD). Selecciona fecha; se muestran los vuelos devueltos por el proveedor para esa ruta. Al elegir uno se completan número, ciudades y fecha. La app muestra una confirmación antes de publicar el viaje en el backend del profesor.
+En **Mi viaje → Buscar vuelo por origen y destino**, elige origen y destino en los selectores. Solo hay seis opciones: **Bogotá (BOG), Medellín (MDE), Cali (CLO), New York (JFK), Miami (MIA) y Washington (IAD)**. Los códigos se envían automáticamente a la API. El registro manual de viajes usa la misma lista. Origen y destino deben ser diferentes. Selecciona fecha; se muestran los vuelos devueltos por el proveedor para esa ruta. Al elegir uno se completan número, ciudades y fecha. La app muestra una confirmación antes de publicar el viaje en el backend del profesor.
+
+Se utiliza un aeropuerto por ciudad: New York corresponde a JFK y Washington a Dulles/IAD; no se agregan automáticamente otros aeropuertos metropolitanos. Referencias oficiales: [JFK](https://www.jfkairport.com/flights), [Dulles](https://www.flydulles.com/airport-overview) y [MDE](https://www.aeropuertorionegro.co/). Esta restricción pertenece a los selectores de la app; el servicio de vuelos sigue siendo genérico y no necesita desplegarse de nuevo.
 
 La búsqueda necesita fecha: un número de vuelo no identifica una salida concreta sin ella. El día inicial es hoy. La disponibilidad depende de cobertura y suscripción, y no se inventan resultados si la configuración falta o el proveedor falla.
 
