@@ -43,8 +43,7 @@ abstract class UserRepository {
   /// Guarda el rol en el perfil del backend y devuelve el rol que el servidor
   /// confirmó, o `null` si la respuesta no lo incluye (el backend aún no
   /// tiene ese campo en su modelo).
-  Future<UserRole?> saveRole(
-      AuthUser user, UserProfile profile, UserRole role);
+  Future<UserRole?> saveRole(AuthUser user, UserProfile profile, UserRole role);
   void close() {}
 }
 
@@ -53,8 +52,8 @@ class ApiUserRepository implements UserRepository {
       {http.Client? client,
       String baseUrl = defaultApiBaseUrl,
       Duration timeout = const Duration(seconds: 20)})
-      : _api = ApiClient(auth,
-            client: client, baseUrl: baseUrl, timeout: timeout);
+      : _api =
+            ApiClient(auth, client: client, baseUrl: baseUrl, timeout: timeout);
   final AuthService auth;
   final ApiClient _api;
   static const _forbidden = 'No tienes permiso para consultar este perfil.';
@@ -99,16 +98,18 @@ class ApiUserRepository implements UserRepository {
       AuthUser user, UserProfile profile, UserRole role) async {
     // Se reenvían nombre y apellido actuales para no vaciarlos; uid y correo
     // no se envían porque el backend rechaza modificarlos.
-    final response = await _api.send(
-        'PUT', '/api/users/${Uri.encodeComponent(user.uid)}',
-        body: {
-          'nombre': profile.name,
-          'apellido': profile.surname,
-          'rol': role.apiValue,
-        },
-        forbiddenMessage: 'No tienes permiso para modificar este perfil.');
-    return UserProfile.fromJson(_userJson(response, allowBare: true), user)
-        .role;
+    final response =
+        await _api.send('PUT', '/api/users/${Uri.encodeComponent(user.uid)}',
+            body: {
+              'nombre': profile.name,
+              'apellido': profile.surname,
+              'rol': role.apiValue,
+            },
+            forbiddenMessage: 'No tienes permiso para modificar este perfil.');
+    // Un PUT 200 puede limitarse a devolver datos sin persistir campos nuevos.
+    // Validar también la identidad y comprobar el estado realmente guardado.
+    UserProfile.fromJson(_userJson(response, allowBare: true), user);
+    return (await fetch(user))?.role;
   }
 
   @override

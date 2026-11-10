@@ -46,4 +46,4 @@ Falta comprobar manualmente el ingreso desde el formulario Android, restauració
 
 Registra la SHA-1 de desarrollo en la app `com.lapticon.app` del mismo Firebase, habilita el proveedor y descarga un JSON actualizado. Obtén la firma con `gradlew.bat signingReport` desde `android` o desde Android Studio.
 
-Después cambia `FirebaseAuthService.googleAvailable` a `true`, recompila y verifica acceso, cancelación y cierre de sesión. Las pruebas simuladas conservan cobertura del flujo futuro.
+Después ejecuta `verificar-google.ps1` y habilita `GOOGLE_SIGN_IN_ENABLED=true` mediante `--dart-define` o el archivo de configuración local. Recompila y verifica acceso, cancelación y cierre de sesión. Pasos completos en [VUELOS_Y_GOOGLE.md](VUELOS_Y_GOOGLE.md). Las pruebas simuladas conservan cobertura del flujo futuro.

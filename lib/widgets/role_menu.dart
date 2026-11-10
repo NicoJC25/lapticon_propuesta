@@ -28,12 +28,20 @@ class RoleMenu extends StatelessWidget {
           back: false,
           eyebrow: 'MENÚ ${role.label.toUpperCase()}',
           title: title,
-          subtitle: name.isNotEmpty ? 'Hola, $name.' : 'Bienvenido a Lapticon.'),
+          subtitle:
+              name.isNotEmpty ? 'Hola, $name.' : 'Bienvenido a Lapticon.'),
       if (roles.notice != null)
         InlineNotice(
             title: 'Rol guardado en el teléfono',
             message: roles.notice!,
             onClose: roles.dismissNotice),
+      if (roles.notice != null && roles.role != null)
+        TextButton.icon(
+            onPressed: roles.saving ? null : () => roles.choose(roles.role!),
+            icon: const Icon(Icons.sync),
+            label: Text(roles.saving
+                ? 'Comprobando rol…'
+                : 'Reintentar sincronización del rol')),
       ...options,
       const SizedBox(height: 8),
       const Divider(),

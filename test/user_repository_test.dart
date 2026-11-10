@@ -159,27 +159,41 @@ void main() {
     var keepsRole = true;
     final repo = ApiUserRepository(auth, client: MockClient((r) async {
       requests.add(r);
+      final profile = {
+        'uid': 'u-123',
+        'nombre': 'Ana',
+        'apellido': 'Gómez',
+        if (keepsRole) 'rol': 'remitente'
+      };
       return http.Response(
-          jsonEncode({
-            'uid': 'u-123',
-            'nombre': 'Ana',
-            'apellido': 'Gómez',
-            if (keepsRole) 'rol': 'remitente'
-          }),
-          200,
+          jsonEncode(r.method == 'GET' ? {'user': profile} : profile), 200,
           headers: {'content-type': 'application/json; charset=utf-8'});
     }));
     expect(await repo.saveRole(testUser, testProfile, UserRole.remitente),
         UserRole.remitente);
-    expect(requests.single.method, 'PUT');
-    expect(requests.single.url.path, '/api/users/u-123');
+    expect(requests.map((r) => r.method), ['PUT', 'GET']);
+    expect(requests.first.url.path, '/api/users/u-123');
     expect(
-        requests.single.headers['Authorization'], 'Bearer initial-test-token');
-    expect(jsonDecode(requests.single.body),
+        requests.first.headers['Authorization'], 'Bearer initial-test-token');
+    expect(jsonDecode(requests.first.body),
         {'nombre': 'Ana', 'apellido': 'Gómez', 'rol': 'remitente'});
     keepsRole = false;
     expect(
         await repo.saveRole(testUser, testProfile, UserRole.remitente), isNull);
+    repo.close();
+  });
+  test('Un PUT que refleja rol sin guardarlo no confirma persistencia',
+      () async {
+    final repo = ApiUserRepository(auth,
+        client: MockClient((r) async => http.Response(
+            jsonEncode(r.method == 'PUT'
+                ? {'uid': testUser.uid, 'rol': 'viajero'}
+                : {
+                    'user': {'uid': testUser.uid}
+                  }),
+            200)));
+    expect(
+        await repo.saveRole(testUser, testProfile, UserRole.viajero), isNull);
     repo.close();
   });
 }

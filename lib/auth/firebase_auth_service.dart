@@ -30,7 +30,8 @@ class FirebaseAuthService implements AuthService {
   @override
   bool get configured => true;
   @override
-  bool get googleAvailable => false;
+  bool get googleAvailable =>
+      const bool.fromEnvironment('GOOGLE_SIGN_IN_ENABLED');
   @override
   String? get configurationMessage => null;
   static AuthUser _user(User? user) {

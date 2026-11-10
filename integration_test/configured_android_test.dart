@@ -11,7 +11,8 @@ void main() {
       (tester) async {
     final auth = await FirebaseAuthService.bootstrap();
     expect(auth.configured, isTrue);
-    expect(auth.googleAvailable, isFalse);
+    const googleEnabled = bool.fromEnvironment('GOOGLE_SIGN_IN_ENABLED');
+    expect(auth.googleAvailable, googleEnabled);
     await auth.signOut();
     await app.main();
     await tester.pumpAndSettle();
@@ -26,13 +27,16 @@ void main() {
                 find.widgetWithText(FilledButton, 'Iniciar sesión'))
             .onPressed,
         isNotNull);
-    expect(find.text('Google · Pendiente'), findsOneWidget);
+    expect(
+        find.text(
+            googleEnabled ? 'Continuar con Google' : 'Google · Pendiente'),
+        findsOneWidget);
     expect(
         tester
             .widget<OutlinedButton>(
                 find.byWidgetPredicate((widget) => widget is OutlinedButton))
             .onPressed,
-        isNull);
+        googleEnabled ? isNotNull : isNull);
     await binding.convertFlutterSurfaceToImage();
     await tester.pump();
     await binding.takeScreenshot('firebase-correo-android');

@@ -35,7 +35,8 @@ Future<void> pickToday(WidgetTester tester) async {
   await tapVisible(
       tester,
       find
-          .descendant(of: find.byType(Dialog), matching: find.byType(TextButton))
+          .descendant(
+              of: find.byType(Dialog), matching: find.byType(TextButton))
           .last);
 }
 
@@ -125,7 +126,8 @@ void main() {
 
   group('Viajero · Mi viaje', () {
     Future<void> fillTrip(WidgetTester tester) async {
-      await tester.enterText(find.byKey(const ValueKey('campo-vuelo')), 'av 9361');
+      await tester.enterText(
+          find.byKey(const ValueKey('campo-vuelo')), 'av 9361');
       await pickToday(tester);
       await pickPlace(tester, 'campo-origen', 'Colombia', 'Bogotá');
       await pickPlace(tester, 'campo-destino', 'España', 'Madrid');
@@ -145,7 +147,8 @@ void main() {
       await tester.enterText(
           find.byKey(const ValueKey('campo-vuelo')), 'AVIANCA');
       await tapVisible(tester, find.text('Validar vuelo y registrar'));
-      expect(find.text('Usa el código de la aerolínea y el número, como AV9361.'),
+      expect(
+          find.text('Usa el código de la aerolínea y el número, como AV9361.'),
           findsOneWidget);
       expect(trips.checks, isEmpty);
 
@@ -193,6 +196,21 @@ void main() {
       expect(find.textContaining('sin validar el vuelo'), findsOneWidget);
     });
 
+    testWidgets('Cambiar ruta invalida el permiso de registrar sin comprobar',
+        (tester) async {
+      trips.check = const FlightCheck(FlightCheckResult.unavailable);
+      await open(tester, UserRole.viajero);
+      await tapVisible(tester, find.text('Mi viaje'));
+      await fillTrip(tester);
+      await tapVisible(tester, find.text('Validar vuelo y registrar'));
+      expect(find.text('Registrar sin validar'), findsOneWidget);
+      await pickPlace(tester, 'campo-origen', 'España', 'Madrid');
+      expect(find.text('Registrar sin validar'), findsNothing);
+      await tapVisible(tester, find.text('Validar vuelo y registrar'));
+      expect(find.text('El destino debe ser diferente del origen.'),
+          findsOneWidget);
+      expect(trips.registered, isEmpty);
+    });
     testWidgets('El 400 de viaje existente se muestra', (tester) async {
       trips.registerFailure = const AppFailure(
           'Ya existe un viaje disponible para este usuario',
@@ -221,7 +239,8 @@ void main() {
       expect(find.text('07/11/2026'), findsOneWidget);
       await tapVisible(tester, find.text('Cancelar viaje'));
       expect(find.text('¿Cancelar tu viaje?'), findsOneWidget);
-      await tapVisible(tester, find.widgetWithText(FilledButton, 'Cancelar viaje'));
+      await tapVisible(
+          tester, find.widgetWithText(FilledButton, 'Cancelar viaje'));
       expect(trips.cancelled, ['v-9']);
       expect(find.text('Registra\ntu viaje.'), findsOneWidget);
       expect(find.text('Cancelaste tu viaje. Puedes registrar otro.'),

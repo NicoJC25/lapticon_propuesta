@@ -1,5 +1,7 @@
 # Lapticon para Android
 
+**Correcciones del 9 de noviembre:** búsqueda de vuelos por ruta mediante el servicio incluido en `flight_proxy/`, autocompletado del viaje y confirmación antes de publicarlo; comprobación del rol mediante GET después del PUT; validaciones de vuelo corregidas y Google configurable. Consulta [VUELOS_Y_GOOGLE.md](VUELOS_Y_GOOGLE.md) para conectar proveedor y Google, y [ALCANCE_Y_PENDIENTES.md](ALCANCE_Y_PENDIENTES.md) para el estado de las cinco semanas. Estas conexiones externas todavía requieren configuración; no se simulan en la app.
+
 Aplicación Android en Flutter. **Fase 1:** autenticación con correo y contraseña, Google, registro, recuperación, restauración y cierre de sesión. **Fase 2:** selección de rol (remitente o viajero), menús por rol y creación de encomiendas con `POST /api/encomiendas`. **Semana 3:** Mis encomiendas por estado, registro de viaje con validación del vuelo, y búsqueda y toma de encomiendas.
 
 **Estado actual:** Android usa `com.lapticon.app` y el proyecto Firebase `lapticon-eba31`. El archivo del profesor se coloca localmente en `android/app/google-services.json` (ignorado por Git). Correo, registro y recuperación usan Firebase; Google permanece deshabilitado hasta registrar la firma SHA-1 y actualizar la configuración. Sin el archivo, la app sigue mostrando la conexión pendiente.
@@ -43,7 +45,7 @@ Login ─► Perfil completo ─► RoleRedirectorScreen ─┬─► Elegir rol
 ```
 
 - **Elegir rol.** Tras el login, un usuario sin rol elige *remitente* o *viajero*. Puede cambiarlo desde su menú con **Cambiar de rol**.
-- **Dónde vive el rol.** Se lee primero del perfil del backend (campo `rol`) y, si no está, de una caché en `SharedPreferences` guardada **por uid** (dos cuentas en el mismo teléfono no comparten rol). Al elegir se guarda en la caché y se envía con `PUT /api/users/{uid}` (`nombre`, `apellido`, `rol`).
+- **Dónde vive el rol.** Se lee primero del perfil del backend (campo `rol`) y, si no está, de una caché en `SharedPreferences` guardada **por uid** (dos cuentas en el mismo teléfono no comparten rol). Al elegir se guarda en la caché y se envía con `PUT /api/users/{uid}` (`nombre`, `apellido`, `rol`); después se hace GET para verificar persistencia. Si no se confirma, el menú muestra el aviso y permite reintentar la sincronización.
 - **Limitación conocida del backend.** El modelo `Usuario` del Swagger no tiene campo `rol`. Si el servidor no lo devuelve tras el `PUT`, la app muestra el aviso *Rol guardado en el teléfono*: funciona en ese dispositivo, pero no se recupera en otro. Cuando el backend agregue el campo, el rol se sincronizará sin cambiar la app.
 - **Menú remitente.** *Crear encomienda* está activo. *Mis encomiendas* y *Calificar viajeros* aparecen como pendientes de las semanas 3 y 4.
 - **Menú viajero.** *Registrar viaje*, *Buscar encomiendas* y *Mis entregas* aparecen como pendientes de las semanas 3 y 4.

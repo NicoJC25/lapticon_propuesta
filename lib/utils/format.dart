@@ -1,4 +1,4 @@
-/// Formatos de fecha y dinero para la interfaz.
+// Formatos de fecha y dinero para la interfaz.
 
 /// 07/03/2026. Las fechas sin hora de la API llegan como medianoche UTC
 /// (`2026-11-07T00:00:00.000Z`); se leen en UTC para que en Bogotá (UTC-5)

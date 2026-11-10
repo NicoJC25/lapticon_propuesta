@@ -11,6 +11,7 @@ import '../widgets/date_field.dart';
 import '../widgets/place_picker.dart';
 import '../widgets/shipment_card.dart';
 import 'buscar_encomiendas_screen.dart';
+import 'flight_search_screen.dart';
 
 /// Viajero: ver su viaje disponible o registrar uno nuevo.
 ///
@@ -141,7 +142,8 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'No se pudo validar el vuelo. Inténtalo de nuevo.');
+        setState(
+            () => _error = 'No se pudo validar el vuelo. Inténtalo de nuevo.');
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -150,6 +152,7 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
 
   Future<void> _registerUnverified() async {
     if (_busy) return;
+    if (!_form.currentState!.validate()) return;
     final trips = TripScope.of(context);
     setState(() {
       _busy = true;
@@ -163,7 +166,8 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'No se pudo registrar el viaje. Inténtalo de nuevo.');
+        setState(() =>
+            _error = 'No se pudo registrar el viaje. Inténtalo de nuevo.');
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -232,18 +236,68 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
   @override
   Widget build(BuildContext context) {
     final trip = _trip;
+    final enabled = !_busy && !_loading && trip == null && _loadError == null;
     return AccessShell(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      OutlinedButton.icon(
+          onPressed: enabled
+              ? () async {
+                  final trips = TripScope.of(context);
+                  final draft = await Navigator.of(context).push<TripDraft>(
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              FlightSearchScreen(repository: trips)));
+                  if (draft == null || !mounted || !context.mounted) return;
+                  final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                              scrollable: true,
+                              title: const Text('Confirmar viaje'),
+                              content: Text(
+                                  '${draft.flightNumber}\n${draft.origin.city} → ${draft.destination.city}\n${formatDate(draft.date)}'),
+                              actions: [
+                                TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Volver')),
+                                FilledButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Registrar viaje'))
+                              ]));
+                  if (confirmed != true || !mounted) return;
+                  setState(() {
+                    _busy = true;
+                    _error = null;
+                  });
+                  try {
+                    await _register(trips, draft,
+                        notice:
+                            'Viaje registrado con el vuelo seleccionado del catálogo.');
+                  } on AppFailure catch (e) {
+                    if (mounted) setState(() => _error = e.message);
+                  } catch (_) {
+                    if (mounted) {
+                      setState(() => _error = 'No se pudo registrar el viaje.');
+                    }
+                  } finally {
+                    if (mounted) setState(() => _busy = false);
+                  }
+                }
+              : null,
+          icon: const Icon(Icons.travel_explore),
+          label: const Text('Buscar vuelo por origen y destino')),
+      const SizedBox(height: 18),
       AccessHeader(
           eyebrow: 'MI VIAJE',
-          title: trip == null ? 'Registra\ntu viaje.' : 'Tu viaje\nestá activo.',
+          title:
+              trip == null ? 'Registra\ntu viaje.' : 'Tu viaje\nestá activo.',
           subtitle: trip == null
               ? 'Ingresa tu vuelo, la fecha y la ruta. Solo puedes tener un viaje disponible a la vez.'
               : 'Los remitentes de esta ruta pueden encontrarte. Busca encomiendas para llevar.'),
       if (_notice != null)
         InlineNotice(
-            message: _notice!,
-            onClose: () => setState(() => _notice = null)),
+            message: _notice!, onClose: () => setState(() => _notice = null)),
       if (_error != null)
         InlineNotice(title: 'Revisa tu viaje', message: _error!, error: true),
       if (_loading)
@@ -275,15 +329,14 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.teal, width: 1.5)),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Wrap: con texto grande la etiqueta baja a otra línea.
-                  Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Wrap: con texto grande la etiqueta baja a otra línea.
+              Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
                     Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(Icons.flight_takeoff_rounded,
                           color: AppColors.teal),
@@ -301,17 +354,16 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
                             ? ChipTone.teal
                             : ChipTone.grey),
                   ]),
-                  const SizedBox(height: 12),
-                  Text('${trip.origin} → ${trip.destination}',
-                      style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink)),
-                  const SizedBox(height: 4),
-                  Text(formatOptionalDate(trip.date, 'Sin fecha'),
-                      style: const TextStyle(
-                          fontSize: 13, color: AppColors.muted)),
-                ])),
+              const SizedBox(height: 12),
+              Text('${trip.origin} → ${trip.destination}',
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink)),
+              const SizedBox(height: 4),
+              Text(formatOptionalDate(trip.date, 'Sin fecha'),
+                  style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+            ])),
         PrimaryAction(
             label: 'Buscar encomiendas de mi ruta',
             icon: Icons.search_rounded,
@@ -370,7 +422,10 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
               enabled: enabled,
               validator: (place) =>
                   place == null ? 'Elige la ciudad de origen.' : null,
-              onChanged: (place) => setState(() => _origin = place)),
+              onChanged: (place) => setState(() {
+                    _origin = place;
+                    _unverifiedReason = null;
+                  })),
           PlacePickerField(
               key: const ValueKey('campo-destino'),
               label: 'Destino',
@@ -379,7 +434,10 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
               repository: places,
               enabled: enabled,
               validator: _validateDestination,
-              onChanged: (place) => setState(() => _destination = place)),
+              onChanged: (place) => setState(() {
+                    _destination = place;
+                    _unverifiedReason = null;
+                  })),
           const SizedBox(height: 6),
           if (_unverifiedReason != null) ...[
             InlineNotice(

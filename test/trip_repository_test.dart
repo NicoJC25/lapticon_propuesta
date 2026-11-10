@@ -7,9 +7,9 @@ import 'package:lapticon/data/shipment_repository.dart';
 import 'package:lapticon/data/trip_repository.dart';
 import 'fakes.dart';
 
-http.Response jsonResponse(Object body, [int status = 200]) => http.Response(
-    jsonEncode(body), status,
-    headers: {'content-type': 'application/json; charset=utf-8'});
+http.Response jsonResponse(Object body, [int status = 200]) =>
+    http.Response(jsonEncode(body), status,
+        headers: {'content-type': 'application/json; charset=utf-8'});
 
 Matcher failure(String code) =>
     isA<AppFailure>().having((e) => e.code, 'code', code);
@@ -42,7 +42,8 @@ void main() {
         date: DateTime(2026, 11, 7)));
     expect(requests.single.method, 'POST');
     expect(requests.single.url.path, '/api/viajes');
-    expect(requests.single.headers['Authorization'], 'Bearer initial-test-token');
+    expect(
+        requests.single.headers['Authorization'], 'Bearer initial-test-token');
     expect(jsonDecode(requests.single.body), {
       'numeroVuelo': 'AV9361',
       'ciudadOrigen': 'Bogotá',
@@ -60,7 +61,8 @@ void main() {
   test('Ya existe un viaje: el 400 muestra el mensaje de la API', () async {
     final repo = ApiTripRepository(auth,
         client: MockClient((_) async => jsonResponse(
-            {'error': 'Ya existe un viaje disponible para este usuario'}, 400)));
+            {'error': 'Ya existe un viaje disponible para este usuario'},
+            400)));
     await expectLater(
         repo.register(TripDraft(
             flightNumber: 'AV9361',
@@ -100,7 +102,8 @@ void main() {
   });
 
   group('Validar vuelo', () {
-    Future<FlightCheck> check(http.Response Function(http.Request) reply) async {
+    Future<FlightCheck> check(
+        http.Response Function(http.Request) reply) async {
       late http.Request request;
       final repo = ApiTripRepository(auth, client: MockClient((r) async {
         request = r;
@@ -144,10 +147,20 @@ void main() {
       expect(auth.logoutCalls, 0);
     });
 
-    test('Respuesta con formato desconocido cuenta como encontrado', () async {
+    test('Respuesta desconocida no confirma un vuelo', () async {
       final result = await check((_) => jsonResponse({'ok': true}));
-      expect(result.result, FlightCheckResult.found);
+      expect(result.result, FlightCheckResult.unavailable);
       expect(result.summary, isNull);
+    });
+    test('JSON inválido no confirma un vuelo', () async {
+      final result = await check((_) => http.Response('not-json', 200));
+      expect(result.result, FlightCheckResult.unavailable);
+    });
+    test('Un vuelo diferente no valida el número solicitado', () async {
+      final result = await check((_) => jsonResponse([
+            {'number': 'AV41', 'departure': {}, 'arrival': {}}
+          ]));
+      expect(result.result, FlightCheckResult.unavailable);
     });
   });
 
@@ -175,13 +188,12 @@ void main() {
         };
 
     test('Mis encomiendas lee el arreglo de GET /api/encomiendas', () async {
-      final repo = ApiShipmentRepository(auth,
-          client: MockClient((r) async {
-            expect(r.url.path, '/api/encomiendas');
-            expect(r.headers['Authorization'], 'Bearer initial-test-token');
-            return jsonResponse(
-                [encomienda('e1', 'disponible'), encomienda('e2', 'vencida')]);
-          }));
+      final repo = ApiShipmentRepository(auth, client: MockClient((r) async {
+        expect(r.url.path, '/api/encomiendas');
+        expect(r.headers['Authorization'], 'Bearer initial-test-token');
+        return jsonResponse(
+            [encomienda('e1', 'disponible'), encomienda('e2', 'vencida')]);
+      }));
       final items = await repo.mine();
       expect(items.map((s) => s.status),
           [ShipmentStatus.disponible, ShipmentStatus.vencida]);

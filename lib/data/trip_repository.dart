@@ -4,6 +4,7 @@ import '../auth/auth_service.dart';
 import '../utils/format.dart';
 import 'api_client.dart';
 import 'shipment_repository.dart';
+import 'flight_catalog.dart';
 
 /// Estados de viaje que maneja la API.
 enum TripStatus {
@@ -77,8 +78,8 @@ String normalizeFlightNumber(String value) =>
     value.replaceAll(RegExp(r'\s+'), '').toUpperCase();
 
 /// Código IATA de aerolínea (2 caracteres) + 1 a 4 dígitos + letra opcional.
-bool isValidFlightNumber(String value) =>
-    RegExp(r'^[A-Z0-9]{2}\d{1,4}[A-Z]?$').hasMatch(normalizeFlightNumber(value));
+bool isValidFlightNumber(String value) => RegExp(r'^[A-Z0-9]{2}\d{1,4}[A-Z]?$')
+    .hasMatch(normalizeFlightNumber(value));
 
 enum FlightCheckResult { found, notFound, unavailable }
 
@@ -95,6 +96,14 @@ class FlightCheck {
 }
 
 abstract class TripRepository {
+  Future<List<AirportOption>> searchAirports(String query) async =>
+      throw const AppFailure('El catálogo no está configurado.',
+          code: 'configuration');
+  Future<List<FlightOption>> searchFlights(
+          String origin, String destination, String date) async =>
+      throw const AppFailure('El catálogo de vuelos no está configurado.',
+          code: 'configuration');
+
   /// Viaje disponible del usuario; `null` si no tiene (404).
   Future<Trip?> active();
   Future<List<Trip>> mine();
@@ -109,10 +118,20 @@ class ApiTripRepository implements TripRepository {
       {http.Client? client,
       String baseUrl = defaultApiBaseUrl,
       Duration timeout = const Duration(seconds: 20)})
-      : _api = ApiClient(auth,
-            client: client, baseUrl: baseUrl, timeout: timeout);
+      : _catalog = FlightCatalog(auth),
+        _api =
+            ApiClient(auth, client: client, baseUrl: baseUrl, timeout: timeout);
   final ApiClient _api;
-  static const _invalid = 'La respuesta del viaje no tiene el formato esperado.';
+  final FlightCatalog _catalog;
+  @override
+  Future<List<AirportOption>> searchAirports(String query) =>
+      _catalog.airports(query);
+  @override
+  Future<List<FlightOption>> searchFlights(
+          String origin, String destination, String date) =>
+      _catalog.search(origin, destination, date);
+  static const _invalid =
+      'La respuesta del viaje no tiene el formato esperado.';
   static const _forbidden = 'No tienes permiso para gestionar este viaje.';
 
   Trip _trip(Object? decoded) {
@@ -166,10 +185,23 @@ class ApiTripRepository implements TripRepository {
       try {
         decoded = _api.decode(response, _invalid);
       } on AppFailure {
-        decoded = null;
+        return const FlightCheck(FlightCheckResult.unavailable,
+            message: 'El servicio de vuelos devolvió una respuesta inválida.');
       }
       if (decoded is List && decoded.isEmpty) {
         return const FlightCheck(FlightCheckResult.notFound);
+      }
+      Object? flight = decoded;
+      if (flight is Map) flight = flight['vuelo'] ?? flight['data'] ?? flight;
+      if (flight is List) flight = flight.isEmpty ? null : flight.first;
+      if (flight is! Map ||
+          flight['number'] is! String ||
+          normalizeFlightNumber(flight['number'] as String) !=
+              normalizeFlightNumber(flightNumber) ||
+          flight['departure'] is! Map ||
+          flight['arrival'] is! Map) {
+        return const FlightCheck(FlightCheckResult.unavailable,
+            message: 'La respuesta no confirma el vuelo solicitado.');
       }
       return FlightCheck(FlightCheckResult.found,
           summary: flightSummary(decoded));
@@ -193,14 +225,16 @@ class ApiTripRepository implements TripRepository {
 
   @override
   Future<void> cancel(String id) async {
-    await _api.send(
-        'PATCH', '/api/viajes/${Uri.encodeComponent(id)}/estado',
+    await _api.send('PATCH', '/api/viajes/${Uri.encodeComponent(id)}/estado',
         body: {'estado': TripStatus.cancelado.apiValue},
         forbiddenMessage: _forbidden);
   }
 
   @override
-  void close() => _api.close();
+  void close() {
+    _api.close();
+    _catalog.close();
+  }
 }
 
 /// Resumen de un vuelo de AeroDataBox: "Avianca · Bogotá → Madrid".
