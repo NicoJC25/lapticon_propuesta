@@ -6,6 +6,8 @@ import '../widgets/access_components.dart';
 import '../widgets/access_shell.dart';
 import '../widgets/app_components.dart';
 import '../widgets/shipment_card.dart';
+import '../widgets/delivery_action.dart';
+import '../auth/auth_controller.dart';
 import 'crear_encomienda_screen.dart';
 
 /// Remitente: sus encomiendas agrupadas por estado (`GET /api/encomiendas`).
@@ -51,8 +53,8 @@ class _MisEncomiendasScreenState extends State<MisEncomiendasScreen> {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
       if (mounted) {
-        setState(() =>
-            _error = 'No se pudieron cargar tus encomiendas. Inténtalo de nuevo.');
+        setState(() => _error =
+            'No se pudieron cargar tus encomiendas. Inténtalo de nuevo.');
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -123,7 +125,8 @@ class _MisEncomiendasScreenState extends State<MisEncomiendasScreen> {
             _Section(
                 status: status,
                 items: items.where((s) => s.status == status).toList(),
-                showEmpty: _filter == status),
+                showEmpty: _filter == status,
+                onDelivered: _load),
       ],
     ]));
   }
@@ -131,10 +134,14 @@ class _MisEncomiendasScreenState extends State<MisEncomiendasScreen> {
 
 class _Section extends StatelessWidget {
   const _Section(
-      {required this.status, required this.items, required this.showEmpty});
+      {required this.status,
+      required this.items,
+      required this.showEmpty,
+      required this.onDelivered});
   final ShipmentStatus status;
   final List<Shipment> items;
   final bool showEmpty;
+  final Future<void> Function() onDelivered;
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty && !showEmpty) return const SizedBox.shrink();
@@ -154,7 +161,17 @@ class _Section extends StatelessWidget {
             icon: Icons.inbox_outlined,
             message: 'No tienes encomiendas ${status.label.toLowerCase()}s.')
       else
-        for (final shipment in items) ShipmentCard(shipment: shipment),
+        for (final shipment in items)
+          ShipmentCard(
+              key: ValueKey('shipment-${shipment.id}'),
+              shipment: shipment,
+              action:
+                  canMarkDelivered(shipment, AuthScope.of(context).user?.uid)
+                      ? DeliveryAction(
+                          key: ValueKey('delivery-${shipment.id}'),
+                          shipment: shipment,
+                          onDelivered: onDelivered)
+                      : null),
       const SizedBox(height: 8),
     ]);
   }

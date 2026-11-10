@@ -65,8 +65,7 @@ class ShipmentDraft {
         'observaciones': notes.trim(),
         'moneda': currency,
         'valor': value,
-        if (expiresOn != null)
-          'fechaVencimiento': isoDate(expiresOn!),
+        if (expiresOn != null) 'fechaVencimiento': isoDate(expiresOn!),
       };
 }
 
@@ -151,6 +150,9 @@ abstract class ShipmentRepository {
 
   /// Toma una encomienda como viajero (`PUT /api/encomiendas/tomar/{id}`).
   Future<void> take(String id);
+
+  /// Estado final del contrato actual: recibida (entregada en la presentación).
+  Future<void> markDelivered(String id);
   void close() {}
 }
 
@@ -178,8 +180,8 @@ class ApiShipmentRepository implements ShipmentRepository {
       {http.Client? client,
       String baseUrl = defaultApiBaseUrl,
       Duration timeout = const Duration(seconds: 20)})
-      : _api = ApiClient(auth,
-            client: client, baseUrl: baseUrl, timeout: timeout);
+      : _api =
+            ApiClient(auth, client: client, baseUrl: baseUrl, timeout: timeout);
   final ApiClient _api;
   List<String>? _countries;
   final _cities = <String, List<String>>{};
@@ -199,13 +201,12 @@ class ApiShipmentRepository implements ShipmentRepository {
   }
 
   @override
-  Future<List<String>> countries() async => _countries ??= _names(await _api
-      .send('GET', '/api/ciudades/paises', authenticated: false));
+  Future<List<String>> countries() async => _countries ??= _names(
+      await _api.send('GET', '/api/ciudades/paises', authenticated: false));
 
   @override
-  Future<List<String>> cities(String country) async =>
-      _cities[country] ??= _names(await _api.send(
-          'GET', '/api/ciudades/ciudades-por-pais',
+  Future<List<String>> cities(String country) async => _cities[country] ??=
+      _names(await _api.send('GET', '/api/ciudades/ciudades-por-pais',
           query: {'nombre': country}, authenticated: false));
 
   @override
@@ -213,7 +214,8 @@ class ApiShipmentRepository implements ShipmentRepository {
     final response = await _api.send('POST', '/api/encomiendas',
         body: draft.toJson(),
         forbiddenMessage: 'No tienes permiso para crear encomiendas.');
-    const message = 'La respuesta de la encomienda no tiene el formato esperado.';
+    const message =
+        'La respuesta de la encomienda no tiene el formato esperado.';
     final decoded = _api.decode(response, message);
     if (decoded is Map<String, dynamic>) {
       final nested = decoded['encomienda'];
@@ -252,6 +254,18 @@ class ApiShipmentRepository implements ShipmentRepository {
   Future<void> take(String id) async {
     await _api.send('PUT', '/api/encomiendas/tomar/${Uri.encodeComponent(id)}',
         forbiddenMessage: 'No tienes permiso para tomar esta encomienda.');
+  }
+
+  @override
+  Future<void> markDelivered(String id) async {
+    if (id.trim().isEmpty) {
+      throw const AppFailure('La encomienda no tiene un identificador válido.',
+          code: 'validation');
+    }
+    await _api.send('PUT', '/api/encomiendas/${Uri.encodeComponent(id)}/estado',
+        body: {'estado': ShipmentStatus.recibida.apiValue},
+        forbiddenMessage:
+            'Solo el remitente o el viajero asignado puede marcar esta entrega.');
   }
 
   @override

@@ -8,7 +8,7 @@ Fuente: `session 10.pdf`, diapositivas 21–23. La presentación propone **seis 
 | Semana 2: roles y creación de encomiendas | Menús, caché por cuenta y formulario implementados | El backend no persiste `rol`; hay que modificar su modelo y actualización |
 | Semana 3: listas, viaje validado y tomar encomienda | Implementados; se añade búsqueda por ruta con selección y datos automáticos | Configurar proveedor y servidor de búsqueda; probar rutas reales y concurrencia con dos cuentas |
 | Semana 4: chat Firestore | No implementado | Conversación entre remitente y viajero, streams, reglas, consulta del estado del chat y bloqueo de envío al cerrarlo |
-| Semana 4: entrega | No implementado | Mis entregas y `PUT /api/encomiendas/{id}/estado` con `recibida`, según contrato actual |
+| Semana 4: entrega | Implementado en el cambio 1 de `entrega-semana-cuatro`: Mis entregas y acción de remitente, con confirmación y PUT `recibida` | Verificar una encomienda real de prueba con dos cuentas; ver `SEMANA_4_ENTREGA.md` |
 | Semana 4: calificación | No implementado | Formulario 1–5 y comentario, `POST /api/ratings`, ambas partes y prevención de duplicados según respuesta del servidor |
 | Semana 4: cierre del chat | No implementado en el cliente | Consultar `/api/chats/estado/{chatId}` y verificar que el servidor cierre tras las calificaciones de ambas partes |
 | Semana 5 | Pruebas automatizadas y compilación disponibles | Prueba del ciclo real con dos cuentas, errores, accesibilidad, documentación y demo |

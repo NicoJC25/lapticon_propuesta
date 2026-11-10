@@ -1,5 +1,7 @@
 # Lapticon para Android
 
+**Semana 4, cambio 1:** marcar la entrega con confirmación, para remitente y viajero asignado. Implementado en la rama `entrega-semana-cuatro`, aislada en esta carpeta. Consulta [SEMANA_4_ENTREGA.md](SEMANA_4_ENTREGA.md) para alcance, ejecución, pruebas y límites del listado de pendientes. Chat y calificaciones quedan para cambios posteriores.
+
 **Correcciones del 9 de noviembre:** búsqueda de vuelos por ruta mediante el servicio incluido en `flight_proxy/`, autocompletado del viaje y confirmación antes de publicarlo; comprobación del rol mediante GET después del PUT; validaciones de vuelo corregidas y Google configurable. Consulta [VUELOS_Y_GOOGLE.md](VUELOS_Y_GOOGLE.md) para conectar proveedor y Google, y [ALCANCE_Y_PENDIENTES.md](ALCANCE_Y_PENDIENTES.md) para el estado de las cinco semanas. Estas conexiones externas todavía requieren configuración; no se simulan en la app.
 
 Aplicación Android en Flutter. **Fase 1:** autenticación con correo y contraseña, Google, registro, recuperación, restauración y cierre de sesión. **Fase 2:** selección de rol (remitente o viajero), menús por rol y creación de encomiendas con `POST /api/encomiendas`. **Semana 3:** Mis encomiendas por estado, registro de viaje con validación del vuelo, y búsqueda y toma de encomiendas.
@@ -65,8 +67,8 @@ Viajero:   Menú ─► Mi viaje ─► validar vuelo ─► POST /api/viajes �
 ```
 
 - **Mis encomiendas (remitente).** `GET /api/encomiendas`, agrupadas por estado con filtros y conteo. El backend marca las vencidas al consultar, así que la lista se refresca con **Actualizar** y al volver de crear una.
-- **Mi viaje (viajero).** Si hay viaje disponible (`GET /api/viajes/disponible`) se muestra con opción de buscar encomiendas o **Cancelar viaje** (`PATCH /api/viajes/{id}/estado` con `cancelado`). Si no, formulario: número de vuelo (código de aerolínea + número, p. ej. `AV9361`), fecha, origen y destino.
-- **Validación del vuelo.** Antes de registrar se consulta `GET /api/vuelos/{numero}/{fecha}`. Si el vuelo no existe se bloquea el registro. **Hoy el servidor responde `500 RAPIDAPI_KEY no está configurada`**, así que la app avisa que no pudo validar y ofrece **Registrar sin validar**. Cuando el profesor configure la clave, la validación funcionará sin cambios en la app.
+- **Mi viaje (viajero).** Muestra el viaje activo y permite cancelarlo. Si no hay uno, abre directamente origen, destino y fecha; consulta vuelos publicados y permite seleccionar y confirmar el registro, sin escribir el número del vuelo.
+- **Selección del vuelo.** El catálogo real se consulta mediante el servicio configurado en `FLIGHT_SEARCH_BASE_URL`. El vuelo elegido aporta automáticamente número, ciudades y fecha. Si no hay vuelos o falla la consulta, se informa y se permite reintentar; no se ofrece registrar sin validar.
 - **Buscar y tomar.** Con la ruta del viaje activo se llama `GET /api/encomiendas/buscar` (`{ disponibles, tomadas }`). **Tomar** pide confirmación y usa `PUT /api/encomiendas/tomar/{id}`; si otro viajero la tomó antes, se muestra el mensaje de la API y se recarga la lista.
 - **Fechas.** Las fechas sin hora de la API (`2026-11-07T00:00:00.000Z`) se muestran en UTC para que en Colombia no aparezcan como el día anterior.
 - **Pendiente para la semana 4:** marcar como recibida, calificar y chat.

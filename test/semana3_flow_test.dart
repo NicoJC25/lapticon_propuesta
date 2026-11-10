@@ -5,6 +5,8 @@ import 'package:lapticon/auth/auth_service.dart';
 import 'package:lapticon/data/shipment_repository.dart';
 import 'package:lapticon/data/trip_repository.dart';
 import 'package:lapticon/data/flight_city.dart';
+import 'package:lapticon/data/flight_catalog.dart';
+import 'dart:async';
 import 'package:lapticon/main.dart';
 import 'package:lapticon/roles/role_controller.dart';
 import 'package:lapticon/roles/role_store.dart';
@@ -20,9 +22,6 @@ Future<void> tapVisible(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-Finder fieldTap(String key) => find.descendant(
-    of: find.byKey(ValueKey(key)), matching: find.byType(InkWell));
-
 Future<void> pickFlightCity(
     WidgetTester tester, String key, String city) async {
   await tapVisible(
@@ -35,7 +34,7 @@ Future<void> pickFlightCity(
 
 /// Abre el calendario y acepta la fecha propuesta (hoy).
 Future<void> pickToday(WidgetTester tester) async {
-  await tapVisible(tester, fieldTap('campo-fecha-viaje'));
+  await tapVisible(tester, find.text(formatDate(DateTime.now())));
   await tapVisible(
       tester,
       find
@@ -59,6 +58,16 @@ void main() {
     users = FakeUserRepository()..stored = testProfile;
     shipments = FakeShipmentRepository();
     trips = FakeTripRepository();
+    trips.catalog = [
+      FlightOption(
+          'AV40',
+          'Avianca',
+          '${isoDate(DateTime.now())}T08:00:00',
+          'BOG',
+          'MIA',
+          const Place(country: 'Colombia', city: 'Bogotá'),
+          const Place(country: 'Estados Unidos', city: 'Miami'))
+    ];
     store = MemoryRoleStore();
   });
   tearDown(() async {
@@ -129,103 +138,130 @@ void main() {
   });
 
   group('Viajero · Mi viaje', () {
-    Future<void> fillTrip(WidgetTester tester) async {
-      await tester.enterText(
-          find.byKey(const ValueKey('campo-vuelo')), 'av 9361');
+    Future<void> searchFlights(WidgetTester tester) async {
+      await pickFlightCity(tester, 'vuelo-origen', 'Bogotá');
+      await pickFlightCity(tester, 'vuelo-destino', 'Miami');
       await pickToday(tester);
-      await pickFlightCity(tester, 'campo-origen', 'Bogotá');
-      await pickFlightCity(tester, 'campo-destino', 'Miami');
+      await tapVisible(tester, find.text('Buscar vuelos'));
     }
 
-    testWidgets('Valida campos, comprueba el vuelo y registra', (tester) async {
+    Future<void> chooseFlight(WidgetTester tester) =>
+        tapVisible(tester, find.text('AV40 · Avianca'));
+    Future<void> confirm(WidgetTester tester) =>
+        tapVisible(tester, find.text('Registrar viaje'));
+
+    testWidgets(
+        'Mi viaje abre ciudades y fecha sin pedir código; selecciona y registra',
+        (tester) async {
       await open(tester, UserRole.viajero);
       await tapVisible(tester, find.text('Mi viaje'));
-      expect(find.text('Registra\ntu viaje.'), findsOneWidget);
-
-      await tapVisible(tester, find.text('Validar vuelo y registrar'));
-      expect(find.text('Escribe el número de vuelo.'), findsOneWidget);
-      expect(find.text('Elige la fecha del vuelo.'), findsOneWidget);
-      expect(find.text('Elige la ciudad de origen.'), findsOneWidget);
-      expect(find.text('Elige la ciudad de destino.'), findsOneWidget);
-
-      await tester.enterText(
-          find.byKey(const ValueKey('campo-vuelo')), 'AVIANCA');
-      await tapVisible(tester, find.text('Validar vuelo y registrar'));
+      expect(find.text('Elige tu vuelo.'), findsOneWidget);
+      expect(find.byKey(const ValueKey('campo-vuelo')), findsNothing);
+      expect(find.byType(TextFormField), findsNothing);
+      await tapVisible(tester, find.text('Buscar vuelos'));
+      expect(find.text('Selecciona la ciudad de origen.'), findsOneWidget);
+      expect(find.text('Selecciona la ciudad de destino.'), findsOneWidget);
+      expect(trips.flightSearches, isEmpty);
+      await searchFlights(tester);
       expect(
-          find.text('Usa el código de la aerolínea y el número, como AV9361.'),
-          findsOneWidget);
-      expect(trips.checks, isEmpty);
-
-      await fillTrip(tester);
-      await tapVisible(tester, find.text('Validar vuelo y registrar'));
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      expect(trips.checks.single.$2, today);
+          trips.flightSearches.single, ('BOG', 'MIA', isoDate(DateTime.now())));
+      await chooseFlight(tester);
+      expect(find.text('Confirmar viaje'), findsOneWidget);
+      expect(trips.registered, isEmpty);
+      await confirm(tester);
       expect(trips.registered.single.toJson(), {
-        'numeroVuelo': 'AV9361',
+        'numeroVuelo': 'AV40',
         'ciudadOrigen': 'Bogotá',
         'ciudadDestino': 'Miami',
-        'fechaViaje': isoDate(today),
+        'fechaViaje': isoDate(DateTime.now())
       });
+      expect(trips.checks, isEmpty);
+      expect(find.text('Tu sesión está lista.'), findsNothing);
       expect(find.text('Tu viaje\nestá activo.'), findsOneWidget);
-      expect(find.text('AV9361'), findsOneWidget);
-      expect(find.text('Vuelo validado: Avianca · Bogotá → Miami.'),
-          findsOneWidget);
     });
-
-    testWidgets('Vuelo inexistente bloquea el registro', (tester) async {
-      trips.check = const FlightCheck(FlightCheckResult.notFound);
-      await open(tester, UserRole.viajero);
-      await tapVisible(tester, find.text('Mi viaje'));
-      await fillTrip(tester);
-      await tapVisible(tester, find.text('Validar vuelo y registrar'));
-      expect(find.textContaining('No encontramos el vuelo AV9361'),
-          findsOneWidget);
-      expect(trips.registered, isEmpty);
-    });
-
-    testWidgets('Sin servicio de vuelos permite registrar sin validar',
+    testWidgets('Sin vuelos no ofrece registro manual ni inventa un código',
         (tester) async {
-      trips.check = const FlightCheck(FlightCheckResult.unavailable,
-          message: 'La API no está disponible.');
+      trips.catalog = [];
       await open(tester, UserRole.viajero);
       await tapVisible(tester, find.text('Mi viaje'));
-      await fillTrip(tester);
-      await tapVisible(tester, find.text('Validar vuelo y registrar'));
-      expect(find.text('No se pudo validar el vuelo'), findsOneWidget);
-      expect(trips.registered, isEmpty);
-      await tapVisible(tester, find.text('Registrar sin validar'));
-      expect(trips.registered, hasLength(1));
-      expect(find.text('Tu viaje\nestá activo.'), findsOneWidget);
-      expect(find.textContaining('sin validar el vuelo'), findsOneWidget);
-    });
-
-    testWidgets('Cambiar ruta invalida el permiso de registrar sin comprobar',
-        (tester) async {
-      trips.check = const FlightCheck(FlightCheckResult.unavailable);
-      await open(tester, UserRole.viajero);
-      await tapVisible(tester, find.text('Mi viaje'));
-      await fillTrip(tester);
-      await tapVisible(tester, find.text('Validar vuelo y registrar'));
-      expect(find.text('Registrar sin validar'), findsOneWidget);
-      await pickFlightCity(tester, 'campo-origen', 'Miami');
+      await searchFlights(tester);
+      expect(find.textContaining('No hay vuelos publicados'), findsOneWidget);
       expect(find.text('Registrar sin validar'), findsNothing);
-      await tapVisible(tester, find.text('Validar vuelo y registrar'));
-      expect(find.text('El destino debe ser diferente del origen.'),
-          findsOneWidget);
       expect(trips.registered, isEmpty);
     });
-    testWidgets('El 400 de viaje existente se muestra', (tester) async {
+    testWidgets('Fallo del catálogo mantiene filtros y permite reintentar',
+        (tester) async {
+      trips.catalogFailure = const AppFailure(
+          'No se pudo consultar el proveedor.',
+          code: 'network');
+      await open(tester, UserRole.viajero);
+      await tapVisible(tester, find.text('Mi viaje'));
+      await searchFlights(tester);
+      expect(find.text('No se pudo consultar el proveedor.'), findsOneWidget);
+      expect(trips.registered, isEmpty);
+      trips.catalogFailure = null;
+      await tapVisible(tester, find.text('Buscar vuelos'));
+      expect(find.text('AV40 · Avianca'), findsOneWidget);
+    });
+    testWidgets('Cancelar la confirmación conserva los vuelos y no registra',
+        (tester) async {
+      await open(tester, UserRole.viajero);
+      await tapVisible(tester, find.text('Mi viaje'));
+      await searchFlights(tester);
+      await chooseFlight(tester);
+      await tapVisible(
+          tester,
+          find.descendant(
+              of: find.byType(AlertDialog), matching: find.text('Volver')));
+      expect(trips.registered, isEmpty);
+      expect(find.text('AV40 · Avianca'), findsOneWidget);
+      expect(find.text('Buscar vuelos'), findsOneWidget);
+    });
+    testWidgets('El 400 al registrar permite reintentar el vuelo seleccionado',
+        (tester) async {
       trips.registerFailure = const AppFailure(
           'Ya existe un viaje disponible para este usuario',
           code: 'api');
       await open(tester, UserRole.viajero);
       await tapVisible(tester, find.text('Mi viaje'));
-      await fillTrip(tester);
-      await tapVisible(tester, find.text('Validar vuelo y registrar'));
+      await searchFlights(tester);
+      await chooseFlight(tester);
+      await confirm(tester);
       expect(find.text('Ya existe un viaje disponible para este usuario'),
           findsOneWidget);
-      expect(find.text('Registra\ntu viaje.'), findsOneWidget);
+      expect(find.text('AV40 · Avianca'), findsOneWidget);
+      trips.registerFailure = null;
+      await chooseFlight(tester);
+      await confirm(tester);
+      expect(find.text('Tu viaje\nestá activo.'), findsOneWidget);
+    });
+    testWidgets('Mientras registra bloquea nuevas selecciones', (tester) async {
+      trips.registerGate = Completer<void>();
+      await open(tester, UserRole.viajero);
+      await tapVisible(tester, find.text('Mi viaje'));
+      await searchFlights(tester);
+      await chooseFlight(tester);
+      await confirm(tester);
+      expect(trips.registered, hasLength(1));
+      expect(
+          tester
+              .widget<ListTile>(find.ancestor(
+                  of: find.text('AV40 · Avianca'),
+                  matching: find.byType(ListTile)))
+              .onTap,
+          isNull);
+      trips.registerGate!.complete();
+      await tester.pumpAndSettle();
+      expect(trips.registered, hasLength(1));
+    });
+    testWidgets('Cambiar ciudad elimina resultados de la ruta anterior',
+        (tester) async {
+      await open(tester, UserRole.viajero);
+      await tapVisible(tester, find.text('Mi viaje'));
+      await searchFlights(tester);
+      await pickFlightCity(tester, 'vuelo-origen', 'Cali');
+      expect(find.text('AV40 · Avianca'), findsNothing);
+      expect(trips.registered, isEmpty);
     });
 
     testWidgets('Viaje activo se muestra y se puede cancelar', (tester) async {
@@ -246,7 +282,7 @@ void main() {
       await tapVisible(
           tester, find.widgetWithText(FilledButton, 'Cancelar viaje'));
       expect(trips.cancelled, ['v-9']);
-      expect(find.text('Registra\ntu viaje.'), findsOneWidget);
+      expect(find.text('Elige tu vuelo.'), findsOneWidget);
       expect(find.text('Cancelaste tu viaje. Puedes registrar otro.'),
           findsOneWidget);
     });
@@ -267,7 +303,7 @@ void main() {
       expect(find.textContaining('Primero registra tu viaje'), findsOneWidget);
       expect(shipments.searches, isEmpty);
       await tapVisible(tester, find.text('Registrar mi viaje'));
-      expect(find.text('Registra\ntu viaje.'), findsOneWidget);
+      expect(find.text('Elige tu vuelo.'), findsOneWidget);
     });
 
     testWidgets('Busca por la ruta del viaje y toma una encomienda',

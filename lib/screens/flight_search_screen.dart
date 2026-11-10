@@ -10,8 +10,16 @@ import '../widgets/access_components.dart';
 import '../widgets/app_components.dart';
 
 class FlightSearchScreen extends StatefulWidget {
-  const FlightSearchScreen({super.key, required this.repository});
+  const FlightSearchScreen(
+      {super.key,
+      required this.repository,
+      this.onSelected,
+      this.initialDate,
+      this.notice});
   final TripRepository repository;
+  final Future<void> Function(TripDraft)? onSelected;
+  final DateTime? initialDate;
+  final String? notice;
   @override
   State<FlightSearchScreen> createState() => _FlightSearchScreenState();
 }
@@ -19,12 +27,40 @@ class FlightSearchScreen extends StatefulWidget {
 class _FlightSearchScreenState extends State<FlightSearchScreen> {
   final _form = GlobalKey<FormState>();
   FlightCity? _origin, _destination;
-  late DateTime _date = DateUtils.dateOnly(DateTime.now());
+  late DateTime _date =
+      DateUtils.dateOnly(widget.initialDate ?? DateTime.now());
   List<FlightOption>? _flights;
   String? _error;
   bool _busy = false;
+  bool _selecting = false;
+  bool get _locked => _busy || _selecting;
+  Future<void> _select(FlightOption flight) async {
+    if (_locked) return;
+    final callback = widget.onSelected;
+    if (callback == null) {
+      Navigator.of(context).pop(flight.draft);
+      return;
+    }
+    setState(() {
+      _selecting = true;
+      _error = null;
+    });
+    try {
+      await callback(flight.draft);
+    } on AppFailure catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() =>
+            _error = 'No se pudo registrar el viaje. Inténtalo de nuevo.');
+      }
+    } finally {
+      if (mounted) setState(() => _selecting = false);
+    }
+  }
+
   Future<void> _search() async {
-    if (_busy || !_form.currentState!.validate()) return;
+    if (_locked || !_form.currentState!.validate()) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -49,7 +85,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       key: ValueKey(origin ? 'vuelo-origen' : 'vuelo-destino'),
       label: label,
       value: origin ? _origin : _destination,
-      enabled: !_busy,
+      enabled: !_locked,
       onChanged: (city) => setState(() {
             if (origin) {
               _origin = city;
@@ -78,6 +114,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             subtitle:
                 'Selecciona origen y destino entre las seis ciudades disponibles y elige la fecha. Elige un vuelo publicado para completar automáticamente número, ruta y fecha del viaje.'),
         if (_error != null) InlineNotice(message: _error!, error: true),
+        if (widget.notice != null) InlineNotice(message: widget.notice!),
         Form(
             key: _form,
             child: Column(children: [
@@ -85,10 +122,11 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
               _field('Destino', false),
             ])),
         OutlinedButton.icon(
-            onPressed: _busy
+            onPressed: _locked
                 ? null
                 : () async {
-                    final now = DateUtils.dateOnly(DateTime.now());
+                    final now = DateUtils.dateOnly(
+                        widget.initialDate ?? DateTime.now());
                     final date = await showDatePicker(
                         context: context,
                         initialDate: _date,
@@ -105,8 +143,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             label: Text(formatDate(_date))),
         const SizedBox(height: 20),
         PrimaryAction(
-            label: 'Buscar vuelos',
-            onPressed: _busy ? null : _search,
+            label: _selecting ? 'Procesando selección…' : 'Buscar vuelos',
+            onPressed: _locked ? null : _search,
             busy: _busy),
         const SizedBox(height: 20),
         if (_flights != null && _flights!.isEmpty)
@@ -120,8 +158,6 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                   subtitle: Text(
                       '${flight.originCode} → ${flight.destinationCode}\n${flight.departure} (hora local de salida)'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: _busy
-                      ? null
-                      : () => Navigator.of(context).pop(flight.draft))),
+                  onTap: _locked ? null : () => _select(flight))),
       ]));
 }

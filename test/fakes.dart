@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:lapticon/auth/auth_service.dart';
 import 'package:lapticon/data/shipment_repository.dart';
 import 'package:lapticon/data/trip_repository.dart';
+import 'package:lapticon/data/flight_catalog.dart';
 import 'package:lapticon/data/user_repository.dart';
 import 'package:lapticon/roles/user_role.dart';
 
@@ -173,6 +174,35 @@ class FakeShipmentRepository extends ShipmentRepository {
   AppFailure? listFailure, takeFailure;
   final searches = <(String, String)>[];
   final takes = <String>[];
+  final deliveries = <String>[];
+  AppFailure? deliveryFailure;
+  Completer<void>? deliveryGate;
+  @override
+  Future<void> markDelivered(String id) async {
+    deliveries.add(id);
+    if (deliveryGate != null) await deliveryGate!.future;
+    if (deliveryFailure != null) throw deliveryFailure!;
+    mineItems = [
+      for (final s in mineItems)
+        if (s.id != id)
+          s
+        else
+          Shipment(
+              id: s.id,
+              origin: s.origin,
+              destination: s.destination,
+              notes: s.notes,
+              currency: s.currency,
+              value: s.value,
+              status: ShipmentStatus.recibida,
+              ownerId: s.ownerId,
+              travelerId: s.travelerId,
+              ownerName: s.ownerName,
+              createdAt: s.createdAt,
+              expiresAt: s.expiresAt)
+    ];
+    taken.removeWhere((s) => s.id == id);
+  }
 
   @override
   Future<List<Shipment>> mine() async {
@@ -213,6 +243,19 @@ Shipment shipment(String id,
         ownerName: 'Ana');
 
 class FakeTripRepository extends TripRepository {
+  List<FlightOption> catalog = [];
+  AppFailure? catalogFailure;
+  Completer<void>? registerGate;
+  final flightSearches = <(String, String, String)>[];
+  @override
+  Future<List<FlightOption>> searchFlights(
+      String origin, String destination, String date) async {
+    flightSearches.add((origin, destination, date));
+    if (catalogFailure != null) throw catalogFailure!;
+    return List.of(catalog);
+  }
+
+  List<Trip> history = [];
   Trip? activeTrip;
   FlightCheck check = const FlightCheck(FlightCheckResult.found,
       summary: 'Avianca · Bogotá → Miami');
@@ -228,7 +271,10 @@ class FakeTripRepository extends TripRepository {
   }
 
   @override
-  Future<List<Trip>> mine() async => [if (activeTrip != null) activeTrip!];
+  Future<List<Trip>> mine() async {
+    if (activeFailure != null) throw activeFailure!;
+    return [...history, if (activeTrip != null) activeTrip!];
+  }
 
   @override
   Future<FlightCheck> checkFlight(String flightNumber, DateTime date) async {
@@ -239,6 +285,7 @@ class FakeTripRepository extends TripRepository {
   @override
   Future<Trip> register(TripDraft draft) async {
     registered.add(draft);
+    if (registerGate != null) await registerGate!.future;
     if (registerFailure != null) throw registerFailure!;
     return activeTrip = Trip(
         id: 'viaje-${registered.length}',
