@@ -1,0 +1,29 @@
+// BORRADOR para revisión del profesor; no es un archivo de despliegue.
+// Integrar dentro de match /databases/{database}/documents después de confirmar
+// que estos campos coinciden con el servicio que crea y cierra los chats.
+// No reemplazar las reglas del proyecto compartido con este fragmento.
+match /chats/{chatId} {
+  function member() {
+    return request.auth != null &&
+      request.auth.uid in resource.data.participantes;
+  }
+  allow get: if member();
+  allow list, create, update, delete: if false;
+
+  match /mensajes/{messageId} {
+    function room() {
+      return get(/databases/$(database)/documents/chats/$(chatId)).data;
+    }
+    function participant() {
+      return request.auth != null && request.auth.uid in room().participantes;
+    }
+    allow read: if participant();
+    allow create: if participant() && room().estado == 'abierto' &&
+      request.resource.data.keys().hasOnly(['autorId', 'texto', 'fechaCreacion']) &&
+      request.resource.data.autorId == request.auth.uid &&
+      request.resource.data.texto is string &&
+      request.resource.data.texto.size() > 0 && request.resource.data.texto.size() <= 1000 &&
+      request.resource.data.fechaCreacion == request.time;
+    allow update, delete: if false;
+  }
+}

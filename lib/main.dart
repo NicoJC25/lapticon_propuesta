@@ -1,3 +1,5 @@
+import 'chat/chat_repository.dart';
+import 'chat/firestore_chat_transport.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/login_screen.dart';
@@ -25,11 +27,13 @@ Future<void> main() async {
   ShipmentRepository shipments;
   TripRepository trips;
   RatingRepository ratings;
+  ChatRepository chats;
   try {
     users = ApiUserRepository(auth);
     shipments = ApiShipmentRepository(auth);
     trips = ApiTripRepository(auth);
     ratings = ApiRatingRepository(auth);
+    chats = ApiChatRepository(auth, transport: configuredChatTransport());
   } catch (_) {
     auth = const UnconfiguredAuthService(
         configurationMessage:
@@ -42,6 +46,8 @@ Future<void> main() async {
         baseUrl: 'https://lapticon-backend.onrender.com');
     ratings = ApiRatingRepository(auth,
         baseUrl: 'https://lapticon-backend.onrender.com');
+    chats = ApiChatRepository(auth,
+        baseUrl: 'https://lapticon-backend.onrender.com');
   }
   final controller = AuthController(auth, users);
   runApp(LapticonApp(
@@ -50,6 +56,7 @@ Future<void> main() async {
       shipments: shipments,
       trips: trips,
       ratings: ratings,
+      chats: chats,
       history: SharedPreferencesDeliveredShipmentStore()));
 }
 
@@ -62,6 +69,7 @@ class LapticonApp extends StatefulWidget {
       this.trips,
       this.ratings,
       this.history,
+      this.chats,
       this.initialRoute = '/'});
   final AuthController? controller;
 
@@ -71,6 +79,7 @@ class LapticonApp extends StatefulWidget {
   final TripRepository? trips;
   final RatingRepository? ratings;
   final DeliveredShipmentStore? history;
+  final ChatRepository? chats;
   final String initialRoute;
   @override
   State<LapticonApp> createState() => _LapticonAppState();
@@ -84,6 +93,7 @@ class _LapticonAppState extends State<LapticonApp> {
   late final TripRepository _trips;
   late final RatingRepository _ratings;
   late final DeliveredShipmentStore _history;
+  late final ChatRepository _chats;
   bool _wasSignedIn = false;
   @override
   void initState() {
@@ -97,6 +107,7 @@ class _LapticonAppState extends State<LapticonApp> {
     _trips = widget.trips ?? ApiTripRepository(const UnconfiguredAuthService());
     _ratings = widget.ratings ?? ApiRatingRepository(_controller.auth);
     _history = widget.history ?? MemoryDeliveredShipmentStore();
+    _chats = widget.chats ?? ApiChatRepository(_controller.auth);
     _controller.addListener(_sessionChanged);
   }
 
@@ -119,6 +130,7 @@ class _LapticonAppState extends State<LapticonApp> {
     if (widget.shipments == null) _shipments.close();
     if (widget.trips == null) _trips.close();
     if (widget.ratings == null) _ratings.close();
+    if (widget.chats == null) _chats.close();
     if (widget.controller == null) _controller.dispose();
     super.dispose();
   }
@@ -160,18 +172,20 @@ class _LapticonAppState extends State<LapticonApp> {
                   child: RatingScope(
                       repository: _ratings,
                       history: _history,
-                      child: MaterialApp(
-                        navigatorKey: _navigator,
-                        title: 'Lapticon · Cada viaje conecta',
-                        debugShowCheckedModeBanner: false,
-                        theme: AppTheme.light,
-                        locale: const Locale('es'),
-                        supportedLocales: const [Locale('es')],
-                        localizationsDelegates:
-                            GlobalMaterialLocalizations.delegates,
-                        initialRoute: widget.initialRoute,
-                        onGenerateInitialRoutes: (name) =>
-                            [_route(RouteSettings(name: name))],
-                        onGenerateRoute: _route,
-                      ))))));
+                      child: ChatScope(
+                          repository: _chats,
+                          child: MaterialApp(
+                            navigatorKey: _navigator,
+                            title: 'Lapticon · Cada viaje conecta',
+                            debugShowCheckedModeBanner: false,
+                            theme: AppTheme.light,
+                            locale: const Locale('es'),
+                            supportedLocales: const [Locale('es')],
+                            localizationsDelegates:
+                                GlobalMaterialLocalizations.delegates,
+                            initialRoute: widget.initialRoute,
+                            onGenerateInitialRoutes: (name) =>
+                                [_route(RouteSettings(name: name))],
+                            onGenerateRoute: _route,
+                          )))))));
 }

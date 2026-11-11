@@ -1,3 +1,4 @@
+import 'chat_action.dart';
 import 'package:flutter/material.dart';
 import '../data/shipment_repository.dart';
 import '../theme/app_theme.dart';
@@ -58,6 +59,7 @@ class ShipmentCard extends StatelessWidget {
               _Detail(icon: Icons.person_outline_rounded, text: s.ownerName),
           ]),
           if (action != null) ...[const SizedBox(height: 14), action!],
+          ChatAction(shipment: s),
         ]));
   }
 }

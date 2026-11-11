@@ -71,7 +71,7 @@ Viajero:   Menú ─► Mi viaje ─► validar vuelo ─► POST /api/viajes �
 - **Selección del vuelo.** El catálogo real se consulta mediante el servicio configurado en `FLIGHT_SEARCH_BASE_URL`. El vuelo elegido aporta automáticamente número, ciudades y fecha. Si no hay vuelos o falla la consulta, se informa y se permite reintentar; no se ofrece registrar sin validar.
 - **Buscar y tomar.** Con la ruta del viaje activo se llama `GET /api/encomiendas/buscar` (`{ disponibles, tomadas }`). **Tomar** pide confirmación y usa `PUT /api/encomiendas/tomar/{id}`; si otro viajero la tomó antes, se muestra el mensaje de la API y se recarga la lista.
 - **Fechas.** Las fechas sin hora de la API (`2026-11-07T00:00:00.000Z`) se muestran en UTC para que en Colombia no aparezcan como el día anterior.
-- **Semana 4:** marcar como recibida y calificaciones entre participantes implementados. Chat pendiente. Consulta `SEMANA_4_CALIFICACIONES.md` para el alcance y las limitaciones del historial.
+- **Semana 4:** marcar como recibida y calificaciones entre participantes implementados. Chat preparado; conexión Firestore pendiente. Consulta `SEMANA_4_CALIFICACIONES.md` para el alcance y las limitaciones del historial.
 
 ## Organización
 
@@ -122,3 +122,7 @@ Fuente Manrope incluida localmente con su licencia OFL. Iconos Material de Flutt
 El remitente entra desde **Calificar viajeros** o desde una encomienda recibida. El viajero entra desde **Calificar remitentes**, después de marcar una entrega desde este dispositivo. Se seleccionan entre 1 y 5 estrellas y un comentario opcional de hasta 500 caracteres. El destinatario y su rol se deducen de la encomienda; no se escriben identificadores.
 
 `ApiRatingRepository` consulta `GET /api/ratings/{uid}` y envía `POST /api/ratings` con el token Firebase. Antes de enviar consulta si el autor ya calificó a esa persona en ese rol; también comprueba el resultado cuando una respuesta se pierde. El backend no vincula la calificación con una encomienda concreta ni documenta un historial global de recibidas del viajero. Ver `SEMANA_4_CALIFICACIONES.md`.
+
+## Semana 4: chat preparado
+
+Las tarjetas de encomiendas tomadas o recibidas de ambos participantes incluyen **Abrir chat**. Se consulta el estado por la API existente, con el token Firebase. La conexión de mensajes está desactivada por defecto (`CHAT_FIRESTORE_ENABLED=false`) y muestra un aviso pendiente. Pantallas, streams, cierre, borrador y reintentos están preparados y cubiertos con servicios simulados. El adaptador Firestore usa un esquema propuesto que debe contrastarse con las reglas y los documentos del profesor antes de activarlo. Ver `SEMANA_4_CHAT.md` para la conexión final y sus verificaciones pendientes.
