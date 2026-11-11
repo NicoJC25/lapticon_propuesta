@@ -71,7 +71,7 @@ Viajero:   Menú ─► Mi viaje ─► validar vuelo ─► POST /api/viajes �
 - **Selección del vuelo.** El catálogo real se consulta mediante el servicio configurado en `FLIGHT_SEARCH_BASE_URL`. El vuelo elegido aporta automáticamente número, ciudades y fecha. Si no hay vuelos o falla la consulta, se informa y se permite reintentar; no se ofrece registrar sin validar.
 - **Buscar y tomar.** Con la ruta del viaje activo se llama `GET /api/encomiendas/buscar` (`{ disponibles, tomadas }`). **Tomar** pide confirmación y usa `PUT /api/encomiendas/tomar/{id}`; si otro viajero la tomó antes, se muestra el mensaje de la API y se recarga la lista.
 - **Fechas.** Las fechas sin hora de la API (`2026-11-07T00:00:00.000Z`) se muestran en UTC para que en Colombia no aparezcan como el día anterior.
-- **Pendiente para la semana 4:** marcar como recibida, calificar y chat.
+- **Semana 4:** marcar como recibida y calificaciones entre participantes implementados. Chat pendiente. Consulta `SEMANA_4_CALIFICACIONES.md` para el alcance y las limitaciones del historial.
 
 ## Organización
 
@@ -116,3 +116,9 @@ La guía Word de ejecución entregada durante el prototipo sigue sirviendo para 
 ## Recursos
 
 Fuente Manrope incluida localmente con su licencia OFL. Iconos Material de Flutter e ilustración vectorial local. Las capturas originales de la carpeta `capturas/` documentan el prototipo visual anterior; las verificaciones Android de esta etapa se guardan en `capturas/autenticacion/`.
+
+## Semana 4: calificaciones entre remitente y viajero
+
+El remitente entra desde **Calificar viajeros** o desde una encomienda recibida. El viajero entra desde **Calificar remitentes**, después de marcar una entrega desde este dispositivo. Se seleccionan entre 1 y 5 estrellas y un comentario opcional de hasta 500 caracteres. El destinatario y su rol se deducen de la encomienda; no se escriben identificadores.
+
+`ApiRatingRepository` consulta `GET /api/ratings/{uid}` y envía `POST /api/ratings` con el token Firebase. Antes de enviar consulta si el autor ya calificó a esa persona en ese rol; también comprueba el resultado cuando una respuesta se pierde. El backend no vincula la calificación con una encomienda concreta ni documenta un historial global de recibidas del viajero. Ver `SEMANA_4_CALIFICACIONES.md`.

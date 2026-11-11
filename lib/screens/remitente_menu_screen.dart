@@ -1,3 +1,4 @@
+import 'ratings_screen.dart';
 import 'package:flutter/material.dart';
 import '../roles/user_role.dart';
 import '../widgets/app_components.dart';
@@ -30,10 +31,11 @@ class RemitenteMenuScreen extends StatelessWidget {
                 subtitle: 'Disponibles, tomadas, recibidas y vencidas.',
                 onTap: () => _open(context, '/encomiendas/mias',
                     const MisEncomiendasScreen())),
-            const MenuTile(
+            MenuTile(
                 icon: Icons.star_outline_rounded,
                 title: 'Calificar viajeros',
                 subtitle: 'Evalúa al viajero cuando recibas tu entrega.',
-                badge: 'Disponible en la semana 4'),
+                onTap: () => _open(context, '/calificaciones/viajeros',
+                    const RatingsScreen(targetRole: UserRole.viajero))),
           ]);
 }

@@ -1,3 +1,4 @@
+import '../widgets/rating_action.dart';
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../data/shipment_repository.dart';
@@ -171,7 +172,7 @@ class _Section extends StatelessWidget {
                           key: ValueKey('delivery-${shipment.id}'),
                           shipment: shipment,
                           onDelivered: onDelivered)
-                      : null),
+                      : RatingAction(shipment: shipment)),
       const SizedBox(height: 8),
     ]);
   }

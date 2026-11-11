@@ -1,3 +1,4 @@
+import 'ratings_screen.dart';
 import 'package:flutter/material.dart';
 import '../roles/user_role.dart';
 import '../widgets/app_components.dart';
@@ -35,5 +36,11 @@ class ViajeroMenuScreen extends StatelessWidget {
             subtitle: 'Marca como recibidas las encomiendas que llevaste.',
             onTap: () =>
                 _open(context, '/entregas', const MisEntregasScreen())),
+        MenuTile(
+            icon: Icons.star_outline_rounded,
+            title: 'Calificar remitentes',
+            subtitle: 'Evalúa al remitente después de la entrega.',
+            onTap: () => _open(context, '/calificaciones/remitentes',
+                const RatingsScreen(targetRole: UserRole.remitente))),
       ]);
 }

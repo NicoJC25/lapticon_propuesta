@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_service.dart';
 import '../data/shipment_repository.dart';
+import '../data/rating_repository.dart';
+import '../data/delivered_shipment_store.dart';
 import 'app_components.dart';
 
 bool canMarkDelivered(Shipment shipment, String? uid) =>
@@ -30,6 +32,7 @@ class _DeliveryActionState extends State<DeliveryAction> {
     if (_busy || _confirming || _done) return;
     final auth = AuthScope.of(context);
     final repository = ShipmentScope.of(context);
+    final history = RatingScope.of(context).history;
     final uid = auth.user?.uid;
     if (!canMarkDelivered(widget.shipment, uid)) return;
     setState(() {
@@ -60,10 +63,18 @@ class _DeliveryActionState extends State<DeliveryAction> {
       }
       setState(() => _busy = true);
       await repository.markDelivered(widget.shipment.id);
+      if (auth.user?.uid != uid) return;
+      if (mounted) setState(() => _done = true);
+      var message = 'Entrega marcada como recibida.';
+      try {
+        await history.remember(uid!, receivedCopy(widget.shipment));
+      } catch (_) {
+        message =
+            'Entrega registrada. No se pudo guardar el historial local para calificar desde este teléfono.';
+      }
       if (!mounted || auth.user?.uid != uid) return;
-      setState(() => _done = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Entrega marcada como recibida.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
       await widget.onDelivered();
     } on AppFailure catch (e) {
       if (mounted) setState(() => _error = e.message);
