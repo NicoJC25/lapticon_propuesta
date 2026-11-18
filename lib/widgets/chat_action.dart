@@ -1,3 +1,4 @@
+import '../config/evaluation_features.dart';
 import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
 import '../chat/chat_repository.dart';
@@ -9,6 +10,9 @@ class ChatAction extends StatelessWidget {
   final Shipment shipment;
   @override
   Widget build(BuildContext context) {
+    if (!EvaluationFeatures.chatVisible(context)) {
+      return const SizedBox.shrink();
+    }
     if (ChatConversation.forShipment(
             shipment, AuthScope.of(context).user?.uid ?? '') ==
         null) {

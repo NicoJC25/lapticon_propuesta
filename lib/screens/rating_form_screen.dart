@@ -89,7 +89,12 @@ class _RatingFormScreenState extends State<RatingFormScreen> {
       final receipt =
           await repo.rate(user, widget.shipment, _score!, _comment.text);
       if (!mounted || auth.user?.uid != user.uid) return;
-      Navigator.pop(context, receipt);
+      setState(() {
+        _busy = false;
+        _existing = receipt.rating;
+      });
+      await WidgetsBinding.instance.endOfFrame;
+      if (mounted) Navigator.pop(context, receipt);
     } on AppFailure catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
@@ -108,61 +113,68 @@ class _RatingFormScreenState extends State<RatingFormScreen> {
         widget.shipment, AuthScope.of(context).user?.uid ?? '');
     final role = target?.role.apiValue ?? 'participante';
     return AccessShell(
+        busy: _busy,
+        changes: _comment,
+        isDirty: () =>
+            _existing == null && (_score != null || _comment.text.isNotEmpty),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      AccessHeader(
-          eyebrow: 'CALIFICACIONES',
-          title: 'Tu experiencia\ncuenta.',
-          subtitle:
-              'Califica al $role de tu entrega ${widget.shipment.origin} → ${widget.shipment.destination}.'),
-      if (_error != null) InlineNotice(message: _error!, error: true),
-      if (_loading)
-        const LoadingBlock()
-      else if (!_checked)
-        OutlinedButton(
-            onPressed: _check, child: const Text('Volver a consultar'))
-      else if (_existing case final previous?) ...[
-        Text('Ya calificaste a este usuario como $role.',
-            style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Text('${previous.score} de 5 estrellas'),
-        if (previous.comment.isNotEmpty) Text(previous.comment),
-        const SizedBox(height: 16),
-        FilledButton(
-            onPressed: () => Navigator.pop(
-                context, RatingReceipt(previous, alreadyExists: true)),
-            child: const Text('Volver a las entregas')),
-      ] else ...[
-        const Text('¿Cómo fue tu experiencia?'),
-        const SizedBox(height: 12),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          for (var i = 1; i <= 5; i++)
-            ChoiceChip(
-                key: ValueKey('rating-$i'),
-                label: Text('$i ★',
-                    semanticsLabel: '$i ${i == 1 ? 'estrella' : 'estrellas'}'),
-                selected: _score == i,
-                onSelected: _busy ? null : (_) => setState(() => _score = i)),
-        ]),
-        const SizedBox(height: 20),
-        TextField(
-            controller: _comment,
-            enabled: !_busy,
-            maxLength: 500,
-            minLines: 3,
-            maxLines: 5,
-            decoration: const InputDecoration(
-                labelText: 'Comentario (opcional)',
-                hintText: 'Comparte una opinión respetuosa sobre la entrega.')),
-        const SizedBox(height: 16),
-        FilledButton(
-            onPressed: _busy ? null : _send,
-            child:
-                Text(_busy ? 'Enviando calificación…' : 'Enviar calificación')),
-        const SizedBox(height: 12),
-        const Text(
-            'Se registra una calificación por persona y rol. No podrás editarla desde esta app.'),
-      ],
-    ]));
+          AccessHeader(
+              eyebrow: 'CALIFICACIONES',
+              title: 'Calificar $role',
+              subtitle:
+                  'Califica al $role de tu entrega ${widget.shipment.origin} → ${widget.shipment.destination}.'),
+          if (_error != null) InlineNotice(message: _error!, error: true),
+          if (_loading)
+            const LoadingBlock()
+          else if (!_checked)
+            OutlinedButton(
+                onPressed: _check, child: const Text('Volver a consultar'))
+          else if (_existing case final previous?) ...[
+            Text('Ya calificaste a este usuario como $role.',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Text('${previous.score} de 5 estrellas'),
+            if (previous.comment.isNotEmpty) Text(previous.comment),
+            const SizedBox(height: 16),
+            FilledButton(
+                onPressed: () => Navigator.pop(
+                    context, RatingReceipt(previous, alreadyExists: true)),
+                child: const Text('Volver a las entregas')),
+          ] else ...[
+            const Text('¿Cómo fue tu experiencia?'),
+            const SizedBox(height: 12),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (var i = 1; i <= 5; i++)
+                ChoiceChip(
+                    key: ValueKey('rating-$i'),
+                    label: Text('$i ★',
+                        semanticsLabel:
+                            '$i ${i == 1 ? 'estrella' : 'estrellas'}'),
+                    selected: _score == i,
+                    onSelected:
+                        _busy ? null : (_) => setState(() => _score = i)),
+            ]),
+            const SizedBox(height: 20),
+            TextField(
+                controller: _comment,
+                enabled: !_busy,
+                maxLength: 500,
+                minLines: 3,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                    labelText: 'Comentario (opcional)',
+                    hintText:
+                        'Comparte una opinión respetuosa sobre la entrega.')),
+            const SizedBox(height: 16),
+            FilledButton(
+                onPressed: _busy ? null : _send,
+                child: Text(
+                    _busy ? 'Enviando calificación…' : 'Enviar calificación')),
+            const SizedBox(height: 12),
+            const Text(
+                'Se registra una calificación por persona y rol. No podrás editarla desde esta app.'),
+          ],
+        ]));
   }
 }

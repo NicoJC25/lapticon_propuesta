@@ -79,7 +79,7 @@ class _MisEntregasScreenState extends State<MisEntregasScreen> {
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const AccessHeader(
             eyebrow: 'MIS ENTREGAS',
-            title: 'Completa tus\nentregas.',
+            title: 'Mis entregas',
             subtitle:
                 'Revisa las encomiendas que tomaste y marca la entrega cuando el paquete haya llegado a destino.'),
         if (_error != null)

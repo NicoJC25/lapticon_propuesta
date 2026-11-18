@@ -1,3 +1,4 @@
+import 'config/evaluation_features.dart';
 import 'chat/chat_repository.dart';
 import 'chat/firestore_chat_transport.dart';
 import 'package:flutter/material.dart';
@@ -70,6 +71,8 @@ class LapticonApp extends StatefulWidget {
       this.ratings,
       this.history,
       this.chats,
+      this.showChat = false,
+      this.showGoogle = false,
       this.initialRoute = '/'});
   final AuthController? controller;
 
@@ -80,6 +83,7 @@ class LapticonApp extends StatefulWidget {
   final RatingRepository? ratings;
   final DeliveredShipmentStore? history;
   final ChatRepository? chats;
+  final bool showChat, showGoogle;
   final String initialRoute;
   @override
   State<LapticonApp> createState() => _LapticonAppState();
@@ -94,7 +98,7 @@ class _LapticonAppState extends State<LapticonApp> {
   late final RatingRepository _ratings;
   late final DeliveredShipmentStore _history;
   late final ChatRepository _chats;
-  bool _wasSignedIn = false;
+  String? _sessionUid;
   @override
   void initState() {
     super.initState();
@@ -109,18 +113,21 @@ class _LapticonAppState extends State<LapticonApp> {
     _history = widget.history ?? MemoryDeliveredShipmentStore();
     _chats = widget.chats ?? ApiChatRepository(_controller.auth);
     _controller.addListener(_sessionChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _sessionChanged();
+    });
   }
 
   void _sessionChanged() {
-    if (_wasSignedIn && !_controller.signedIn) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_controller.signedIn) {
-          _navigator.currentState
-              ?.pushNamedAndRemoveUntil('/login', (_) => false);
-        }
-      });
-    }
-    _wasSignedIn = _controller.signedIn;
+    final uid = _controller.user?.uid;
+    if (_sessionUid == uid) return;
+    _sessionUid = uid;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _controller.user?.uid == uid) {
+        _navigator.currentState?.pushNamedAndRemoveUntil(
+            uid == null ? '/login' : '/home', (_) => false);
+      }
+    });
   }
 
   @override
@@ -174,18 +181,21 @@ class _LapticonAppState extends State<LapticonApp> {
                       history: _history,
                       child: ChatScope(
                           repository: _chats,
-                          child: MaterialApp(
-                            navigatorKey: _navigator,
-                            title: 'Lapticon · Cada viaje conecta',
-                            debugShowCheckedModeBanner: false,
-                            theme: AppTheme.light,
-                            locale: const Locale('es'),
-                            supportedLocales: const [Locale('es')],
-                            localizationsDelegates:
-                                GlobalMaterialLocalizations.delegates,
-                            initialRoute: widget.initialRoute,
-                            onGenerateInitialRoutes: (name) =>
-                                [_route(RouteSettings(name: name))],
-                            onGenerateRoute: _route,
-                          )))))));
+                          child: EvaluationFeatures(
+                              chat: widget.showChat,
+                              google: widget.showGoogle,
+                              child: MaterialApp(
+                                navigatorKey: _navigator,
+                                title: 'Lapticon · Cada viaje conecta',
+                                debugShowCheckedModeBanner: false,
+                                theme: AppTheme.light,
+                                locale: const Locale('es'),
+                                supportedLocales: const [Locale('es')],
+                                localizationsDelegates:
+                                    GlobalMaterialLocalizations.delegates,
+                                initialRoute: widget.initialRoute,
+                                onGenerateInitialRoutes: (name) =>
+                                    [_route(RouteSettings(name: name))],
+                                onGenerateRoute: _route,
+                              ))))))));
 }

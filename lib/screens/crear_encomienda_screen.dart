@@ -1,3 +1,4 @@
+import '../widgets/page_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../auth/auth_service.dart';
@@ -101,8 +102,8 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
       if (mounted) {
-        setState(() => _error =
-            'No se pudo publicar la encomienda. Inténtalo de nuevo.');
+        setState(() =>
+            _error = 'No se pudo publicar la encomienda. Inténtalo de nuevo.');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -126,6 +127,16 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
 
   @override
   Widget build(BuildContext context) => AccessShell(
+      busy: _submitting,
+      changes: Listenable.merge([_notes, _value]),
+      isDirty: () =>
+          _created == null &&
+          (_notes.text.isNotEmpty ||
+              _value.text.isNotEmpty ||
+              _origin != null ||
+              _destination != null ||
+              _expiresOn != null ||
+              _currency != shipmentCurrencies.first),
       child: _created == null ? _formView(context) : _successView(context));
 
   Widget _formView(BuildContext context) {
@@ -134,7 +145,7 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const AccessHeader(
           eyebrow: 'NUEVA ENCOMIENDA',
-          title: 'Publica tu\nencomienda.',
+          title: 'Crear encomienda',
           subtitle:
               'Cuéntanos qué envías y por qué ruta. Quedará disponible para que un viajero la tome.'),
       if (_error != null)
@@ -142,6 +153,8 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
             title: 'No se publicó la encomienda',
             message: _error!,
             error: true),
+      const Text('La fecha límite es opcional. Completa los demás campos.'),
+      const SizedBox(height: 16),
       Form(
           key: _form,
           child:
@@ -194,8 +207,8 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
                               key: const ValueKey('campo-moneda'),
                               value: _currency,
                               isExpanded: true,
-                              decoration: const InputDecoration(
-                                  labelText: 'Moneda'),
+                              decoration:
+                                  const InputDecoration(labelText: 'Moneda'),
                               items: [
                                 for (final code in shipmentCurrencies)
                                   DropdownMenuItem(
@@ -269,7 +282,7 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
       const AccessHeader(
           back: false,
           eyebrow: 'ENCOMIENDA PUBLICADA',
-          title: 'Tu encomienda\nya está disponible.',
+          title: 'Encomienda publicada',
           subtitle:
               'Los viajeros de esta ruta podrán verla y tomarla. La seguirás en Mis encomiendas.'),
       Container(
@@ -291,15 +304,18 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
                 value: created.notes.isNotEmpty ? created.notes : sent.notes),
             _SummaryRow(
                 label: 'Valor',
-                value: formatMoney(created.value ?? sent.value,
-                    created.currency.isNotEmpty ? created.currency : sent.currency)),
+                value: formatMoney(
+                    created.value ?? sent.value,
+                    created.currency.isNotEmpty
+                        ? created.currency
+                        : sent.currency)),
             _SummaryRow(label: 'Estado', value: created.status.label),
             _SummaryRow(label: 'Fecha límite', value: expiry, last: true),
           ])),
       PrimaryAction(
           label: 'Volver al menú',
           icon: Icons.home_outlined,
-          onPressed: () => Navigator.of(context).maybePop()),
+          onPressed: () => returnToMenu(context)),
       const SizedBox(height: 8),
       TextButton.icon(
           onPressed: _reset,
@@ -328,6 +344,8 @@ class _SummaryRow extends StatelessWidget {
         const SizedBox(height: 4),
         Text(value,
             style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink)),
       ]));
 }

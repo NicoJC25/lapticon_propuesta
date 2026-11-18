@@ -21,10 +21,10 @@ abstract final class AppTheme {
         surface: Colors.white),
     textTheme: const TextTheme(
       headlineLarge: TextStyle(
-          fontSize: 38,
+          fontSize: 28,
           height: 1.16,
           fontWeight: FontWeight.w800,
-          letterSpacing: -1.5,
+          letterSpacing: -.7,
           color: AppColors.ink),
       headlineMedium: TextStyle(
           fontSize: 30,

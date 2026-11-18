@@ -73,7 +73,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Sin rol elige remitente, ve su menú y el aviso de sincronización',
+  testWidgets(
+      'Sin rol elige remitente, ve su menú y el aviso de sincronización',
       (tester) async {
     await open(tester);
     expect(find.text(selectionTitle), findsOneWidget);
@@ -95,7 +96,7 @@ void main() {
     expect(find.text('Mi viaje'), findsOneWidget);
     await tapVisible(tester, find.text('Cambiar de rol'));
     expect(find.text(selectionTitle), findsOneWidget);
-    expect(store.roles.containsKey('u-123'), isFalse);
+    expect(store.roles['u-123'], UserRole.viajero);
     await tapVisible(tester, find.text('Envío paquetes'));
     expect(find.text(senderTitle), findsOneWidget);
   });
@@ -104,7 +105,7 @@ void main() {
     store.roles['u-123'] = UserRole.remitente;
     await open(tester);
     await tapVisible(tester, find.text('Cerrar sesión'));
-    expect(find.text('Qué bueno\nverte de nuevo.'), findsOneWidget);
+    expect(find.text('Accede a tu cuenta'), findsOneWidget);
     expect(find.text(senderTitle), findsNothing);
     expect(store.roles['u-123'], UserRole.remitente);
   });
@@ -114,15 +115,15 @@ void main() {
     store.roles['u-123'] = UserRole.remitente;
     await open(tester);
     await tapVisible(tester, find.text('Crear encomienda'));
-    expect(find.text('Publica tu\nencomienda.'), findsOneWidget);
+    expect(find.text('Crear encomienda'), findsOneWidget);
 
     await tapVisible(tester, find.text('Publicar encomienda'));
     expect(find.text('Elige la ciudad de origen.'), findsOneWidget);
     expect(find.text('Elige la ciudad de destino.'), findsOneWidget);
     expect(find.text('Describe qué envías y cualquier cuidado especial.'),
         findsOneWidget);
-    expect(find.text('Escribe el valor que ofreces al viajero.'),
-        findsOneWidget);
+    expect(
+        find.text('Escribe el valor que ofreces al viajero.'), findsOneWidget);
     expect(shipments.created, isEmpty);
 
     await pickPlace(tester, 'campo-origen', 'Colombia', 'Bogotá');
@@ -134,8 +135,8 @@ void main() {
         find.byKey(const ValueKey('campo-observaciones')), 'Dos libros');
     await tester.enterText(find.byKey(const ValueKey('campo-valor')), '50000');
     await tapVisible(tester, find.text('Publicar encomienda'));
-    expect(find.text('El destino debe ser diferente del origen.'),
-        findsOneWidget);
+    expect(
+        find.text('El destino debe ser diferente del origen.'), findsOneWidget);
     expect(shipments.created, isEmpty);
 
     // La búsqueda ignora tildes y mayúsculas.
@@ -148,7 +149,7 @@ void main() {
     expect(find.text('Madrid, España'), findsOneWidget);
 
     await tapVisible(tester, find.text('Publicar encomienda'));
-    expect(find.text('Tu encomienda\nya está disponible.'), findsOneWidget);
+    expect(find.text('Encomienda publicada'), findsOneWidget);
     expect(find.text('Bogotá → Madrid'), findsOneWidget);
     expect(find.text('\$ 50.000 COP'), findsOneWidget);
     expect(find.text('Disponible'), findsOneWidget);
@@ -164,7 +165,8 @@ void main() {
     expect(find.text(senderTitle), findsOneWidget);
   });
 
-  testWidgets('Error de la API se muestra y se puede reintentar sin perder datos',
+  testWidgets(
+      'Error de la API se muestra y se puede reintentar sin perder datos',
       (tester) async {
     store.roles['u-123'] = UserRole.remitente;
     shipments.createFailure =
@@ -181,10 +183,10 @@ void main() {
     expect(find.text('Faltan campos obligatorios'), findsOneWidget);
     shipments.createFailure = null;
     await tapVisible(tester, find.text('Publicar encomienda'));
-    expect(find.text('Tu encomienda\nya está disponible.'), findsOneWidget);
+    expect(find.text('Encomienda publicada'), findsOneWidget);
     expect(shipments.created, hasLength(2));
     await tapVisible(tester, find.text('Crear otra encomienda'));
-    expect(find.text('Publica tu\nencomienda.'), findsOneWidget);
+    expect(find.text('Crear encomienda'), findsOneWidget);
     expect(find.text('Cali, Colombia'), findsNothing);
   });
 
@@ -209,7 +211,7 @@ void main() {
     expect(shipments.created, hasLength(1));
     shipments.gate!.complete();
     await tester.pumpAndSettle();
-    expect(find.text('Tu encomienda\nya está disponible.'), findsOneWidget);
+    expect(find.text('Encomienda publicada'), findsOneWidget);
   });
 
   testWidgets('Lista de lugares con error permite reintentar', (tester) async {

@@ -342,7 +342,8 @@ void main() {
           roles: roles,
           shipments: shipments,
           trips: FakeTripRepository(),
-          chats: chats);
+          chats: chats,
+          showChat: true);
       await t.pumpWidget(largeText
           ? MediaQuery(
               data: const MediaQueryData(textScaler: TextScaler.linear(2)),

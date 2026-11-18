@@ -19,9 +19,7 @@ void main() {
     final button = tester.widget<FilledButton>(
         find.widgetWithText(FilledButton, 'Iniciar sesión'));
     expect(button.onPressed, isNull);
-    final google = tester.widget<OutlinedButton>(
-        find.byWidgetPredicate((widget) => widget is OutlinedButton));
-    expect(google.onPressed, isNull);
+    expect(find.textContaining('Google'), findsNothing);
     expect(find.text('Tu sesión\nestá lista.'), findsNothing);
     await binding.convertFlutterSurfaceToImage();
     await tester.pump();

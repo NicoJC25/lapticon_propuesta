@@ -1,3 +1,4 @@
+import '../config/evaluation_features.dart';
 import 'package:flutter/material.dart';
 import '../widgets/access_components.dart';
 import '../widgets/access_shell.dart';
@@ -23,8 +24,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_form.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
     final password = _password.text;
-    _password.clear();
-    _confirmation.clear();
     auth.register(_email.text, password, _name.text, _surname.text);
   }
 
@@ -44,12 +43,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) => AccessShell(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      busy: AuthScope.of(context).busy,
+      changes:
+          Listenable.merge([_name, _surname, _email, _password, _confirmation]),
+      isDirty: () =>
+          _name.text.isNotEmpty ||
+          _surname.text.isNotEmpty ||
+          _email.text.isNotEmpty ||
+          _password.text.isNotEmpty ||
+          _confirmation.text.isNotEmpty,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const AccessHeader(
-            eyebrow: 'EL INICIO DE ALGO QUE CONECTA',
-            title: 'Acorta distancias.\nCrea tu cuenta.',
+            eyebrow: 'TU CUENTA LAPTICON',
+            title: 'Crea tu cuenta',
             subtitle: 'Un solo lugar para enviar o llevar eso que importa.'),
+        const Text('Todos los campos son obligatorios.'),
+        const SizedBox(height: 16),
         Form(
             key: _form,
             child: Column(children: [
@@ -106,8 +115,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   busy: AuthScope.of(context).busy,
                   onPressed: AuthScope.of(context).canSubmit ? _submit : null),
             ])),
-        const OrDivider(),
-        const GoogleAction(),
+        if (EvaluationFeatures.googleVisible(context)) ...[
+          const OrDivider(),
+          const GoogleAction()
+        ],
         const AccessFooter(
             prompt: '¿Ya tienes una cuenta?',
             action: 'Inicia sesión',

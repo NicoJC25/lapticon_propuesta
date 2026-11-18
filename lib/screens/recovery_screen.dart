@@ -24,8 +24,8 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
     if (mounted && sent) setState(() => _sent = true);
   }
 
-  void _login() => Navigator.pushNamedAndRemoveUntil(
-      context, '/login', (route) => route.isFirst);
+  void _login() =>
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
 
   @override
   void dispose() {
@@ -35,8 +35,10 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
 
   @override
   Widget build(BuildContext context) => AccessShell(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      busy: AuthScope.of(context).busy,
+      isDirty: () => !_sent && _email.text.isNotEmpty,
+      changes: _email,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (!_sent) ...[
           const AccessHeader(
               eyebrow: 'VOLVAMOS A CONECTAR',

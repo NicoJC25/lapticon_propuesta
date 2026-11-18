@@ -1,3 +1,4 @@
+import 'page_navigation.dart';
 import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_service.dart';
@@ -34,6 +35,8 @@ class _DeliveryActionState extends State<DeliveryAction> {
     final repository = ShipmentScope.of(context);
     final history = RatingScope.of(context).history;
     final uid = auth.user?.uid;
+    final navigation = PageNavigation.of(context)?.activity;
+    var writing = false;
     if (!canMarkDelivered(widget.shipment, uid)) return;
     setState(() {
       _confirming = true;
@@ -62,6 +65,8 @@ class _DeliveryActionState extends State<DeliveryAction> {
         return;
       }
       setState(() => _busy = true);
+      navigation?.begin();
+      writing = true;
       await repository.markDelivered(widget.shipment.id);
       if (auth.user?.uid != uid) return;
       if (mounted) setState(() => _done = true);
@@ -84,6 +89,7 @@ class _DeliveryActionState extends State<DeliveryAction> {
             'No se pudo marcar la entrega. Actualiza la lista antes de volver a intentar.');
       }
     } finally {
+      if (writing) navigation?.end();
       if (mounted) {
         setState(() {
           _busy = false;

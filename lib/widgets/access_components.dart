@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../auth/auth_controller.dart';
+import 'page_navigation.dart';
 
 class AccessHeader extends StatelessWidget {
   const AccessHeader(
@@ -17,20 +18,6 @@ class AccessHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (back) ...[
-          TextButton.icon(
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Navigator.pushReplacementNamed(context, '/');
-                }
-              },
-              icon: const Icon(Icons.arrow_back_rounded, size: 17),
-              label: const Text('Volver'),
-              style: TextButton.styleFrom(padding: EdgeInsets.zero)),
-          const SizedBox(height: 18),
-        ],
         Text(eyebrow,
             style: const TextStyle(
                 fontSize: 10,
@@ -44,7 +31,7 @@ class AccessHeader extends StatelessWidget {
                 Text(title, style: Theme.of(context).textTheme.headlineLarge)),
         const SizedBox(height: 12),
         Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
       ]);
 }
 
@@ -246,20 +233,19 @@ class AccessFooter extends StatelessWidget {
               Text(prompt,
                   style: const TextStyle(fontSize: 12, color: AppColors.muted)),
               TextButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, route),
+                  onPressed: AuthScope.of(context).busy
+                      ? null
+                      : () {
+                          final current = ModalRoute.of(context)?.settings;
+                          if (current?.arguments == route) {
+                            PageNavigation.of(context)?.leave(null);
+                          } else {
+                            Navigator.pushNamed(context, route,
+                                arguments: current?.name);
+                          }
+                        },
                   child: Text(action))
             ]),
-        const SizedBox(height: 18),
-        const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.lock_outline_rounded, size: 13, color: AppColors.muted),
-          SizedBox(width: 6),
-          Flexible(
-              child: Text('Acceso con Firebase Authentication',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10, color: AppColors.muted)))
-        ]),
-        const SizedBox(height: 10),
       ]));
 }
 

@@ -1,3 +1,4 @@
+import '../screens/role_selection_screen.dart';
 import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
 import '../roles/role_controller.dart';
@@ -22,38 +23,47 @@ class RoleMenu extends StatelessWidget {
     final auth = AuthScope.of(context);
     final roles = RoleScope.of(context);
     final name = auth.profile?.fullName ?? '';
+    Future<void> openRoles() async {
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => const RoleSelectionScreen(returnToMenu: true)));
+    }
+
     return AccessShell(
+        backLabel: 'Volver a roles',
+        busy: roles.saving || auth.busy,
+        onBack: openRoles,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      AccessHeader(
-          back: false,
-          eyebrow: 'MENÚ ${role.label.toUpperCase()}',
-          title: title,
-          subtitle:
-              name.isNotEmpty ? 'Hola, $name.' : 'Bienvenido a Lapticon.'),
-      if (roles.notice != null)
-        InlineNotice(
-            title: 'Rol guardado en el teléfono',
-            message: roles.notice!,
-            onClose: roles.dismissNotice),
-      if (roles.notice != null && roles.role != null)
-        TextButton.icon(
-            onPressed: roles.saving ? null : () => roles.choose(roles.role!),
-            icon: const Icon(Icons.sync),
-            label: Text(roles.saving
-                ? 'Comprobando rol…'
-                : 'Reintentar sincronización del rol')),
-      ...options,
-      const SizedBox(height: 8),
-      const Divider(),
-      const SizedBox(height: 4),
-      TextButton.icon(
-          onPressed: roles.saving ? null : roles.change,
-          icon: const Icon(Icons.swap_horiz_rounded),
-          label: const Text('Cambiar de rol')),
-      TextButton.icon(
-          onPressed: auth.canSubmit ? auth.signOut : null,
-          icon: const Icon(Icons.logout_rounded),
-          label: const Text('Cerrar sesión')),
-    ]));
+          AccessHeader(
+              back: false,
+              eyebrow: 'MENÚ ${role.label.toUpperCase()}',
+              title: title,
+              subtitle:
+                  name.isNotEmpty ? 'Hola, $name.' : 'Bienvenido a Lapticon.'),
+          if (roles.notice != null)
+            InlineNotice(
+                title: 'Rol guardado en el teléfono',
+                message: roles.notice!,
+                onClose: roles.dismissNotice),
+          if (roles.notice != null && roles.role != null)
+            TextButton.icon(
+                onPressed:
+                    roles.saving ? null : () => roles.choose(roles.role!),
+                icon: const Icon(Icons.sync),
+                label: Text(roles.saving
+                    ? 'Comprobando rol…'
+                    : 'Reintentar sincronización del rol')),
+          ...options,
+          const SizedBox(height: 8),
+          const Divider(),
+          const SizedBox(height: 4),
+          TextButton.icon(
+              onPressed: roles.saving ? null : openRoles,
+              icon: const Icon(Icons.swap_horiz_rounded),
+              label: const Text('Cambiar de rol')),
+          TextButton.icon(
+              onPressed: auth.canSubmit ? auth.signOut : null,
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Cerrar sesión')),
+        ]));
   }
 }

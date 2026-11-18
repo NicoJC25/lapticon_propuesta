@@ -29,15 +29,16 @@ void main() {
     await auth.close();
   });
   Future<void> open(WidgetTester tester, String route) async {
-    await tester
-        .pumpWidget(LapticonApp(controller: controller, initialRoute: route));
+    await tester.pumpWidget(LapticonApp(
+        controller: controller, initialRoute: route, showGoogle: true));
     await tester.pumpAndSettle();
   }
 
   testWidgets(
       'Sin configuración se ven pantallas y se bloquean todas las acciones reales',
       (tester) async {
-    await tester.pumpWidget(const LapticonApp(initialRoute: '/login'));
+    await tester.pumpWidget(
+        const LapticonApp(initialRoute: '/login', showGoogle: true));
     await tester.pumpAndSettle();
     expect(find.text('Conexión con Firebase pendiente'), findsOneWidget);
     expect(
@@ -97,7 +98,7 @@ void main() {
         findsOneWidget);
     expect(
         tester.widget<TextField>(find.byType(TextField).at(1)).controller!.text,
-        isEmpty);
+        'demo123');
     auth.failure = null;
     await tester.enterText(find.byType(TextFormField).at(1), 'demo123');
     await tapVisible(
@@ -106,7 +107,7 @@ void main() {
     expect(find.text('Hola, Ana Gómez.'), findsOneWidget);
     expect(users.writes, 0);
     await tapVisible(tester, find.text('Cerrar sesión'));
-    expect(find.text('Qué bueno\nverte de nuevo.'), findsOneWidget);
+    expect(find.text('Accede a tu cuenta'), findsOneWidget);
     expect(find.text('¿Cómo quieres\nusar Lapticon?'), findsNothing);
   });
 
@@ -165,7 +166,7 @@ void main() {
     auth.googleCancelled = true;
     await open(tester, '/login');
     await tapVisible(tester, find.text('Continuar con Google'));
-    expect(find.text('Qué bueno\nverte de nuevo.'), findsOneWidget);
+    expect(find.text('Accede a tu cuenta'), findsOneWidget);
     expect(controller.error, isNull);
     auth.googleCancelled = false;
     await tapVisible(tester, find.text('Continuar con Google'));
@@ -193,13 +194,13 @@ void main() {
     expect(find.byType(TextFormField), findsOneWidget);
     await tapVisible(tester, find.text('Enviar enlace'));
     await tapVisible(tester, find.text('Volver al login'));
-    expect(find.text('Qué bueno\nverte de nuevo.'), findsOneWidget);
+    expect(find.text('Accede a tu cuenta'), findsOneWidget);
   });
 
   testWidgets('Ruta directa protegida sin sesión muestra login',
       (tester) async {
     await open(tester, '/home');
-    expect(find.text('Qué bueno\nverte de nuevo.'), findsOneWidget);
+    expect(find.text('Accede a tu cuenta'), findsOneWidget);
     expect(find.text('¿Cómo quieres\nusar Lapticon?'), findsNothing);
   });
   testWidgets('Sesión restaurada entra protegida; expiración vuelve al login',
@@ -213,7 +214,7 @@ void main() {
     expect(auth.loginCalls, 0);
     auth.changes.add(null);
     await tester.pumpAndSettle();
-    expect(find.text('Qué bueno\nverte de nuevo.'), findsOneWidget);
+    expect(find.text('Accede a tu cuenta'), findsOneWidget);
     expect(find.text('ana@example.com'), findsNothing);
   });
   testWidgets('Carga bloquea botón y campos mientras Firebase responde',

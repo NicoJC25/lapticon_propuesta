@@ -107,7 +107,7 @@ void main() {
       ];
       await open(tester, UserRole.remitente);
       await tapVisible(tester, find.text('Mis encomiendas'));
-      expect(find.text('Sigue tus\nencomiendas.'), findsOneWidget);
+      expect(find.text('Mis encomiendas'), findsOneWidget);
       expect(find.text('Disponibles · 2'), findsOneWidget);
       expect(find.text('Tomadas · 1'), findsOneWidget);
       expect(find.text('Vencidas · 1'), findsOneWidget);
@@ -133,7 +133,7 @@ void main() {
       await tapVisible(tester, find.text('Actualizar'));
       expect(find.textContaining('Todavía no has publicado'), findsOneWidget);
       await tapVisible(tester, find.text('Nueva'));
-      expect(find.text('Publica tu\nencomienda.'), findsOneWidget);
+      expect(find.text('Crear encomienda'), findsOneWidget);
     });
   });
 
@@ -177,7 +177,7 @@ void main() {
       });
       expect(trips.checks, isEmpty);
       expect(find.text('Tu sesión está lista.'), findsNothing);
-      expect(find.text('Tu viaje\nestá activo.'), findsOneWidget);
+      expect(find.text('Mi viaje activo'), findsOneWidget);
     });
     testWidgets('Sin vuelos no ofrece registro manual ni inventa un código',
         (tester) async {
@@ -233,7 +233,7 @@ void main() {
       trips.registerFailure = null;
       await chooseFlight(tester);
       await confirm(tester);
-      expect(find.text('Tu viaje\nestá activo.'), findsOneWidget);
+      expect(find.text('Mi viaje activo'), findsOneWidget);
     });
     testWidgets('Mientras registra bloquea nuevas selecciones', (tester) async {
       trips.registerGate = Completer<void>();
@@ -245,9 +245,9 @@ void main() {
       expect(trips.registered, hasLength(1));
       expect(
           tester
-              .widget<ListTile>(find.ancestor(
+              .widget<InkWell>(find.ancestor(
                   of: find.text('AV40 · Avianca'),
-                  matching: find.byType(ListTile)))
+                  matching: find.byType(InkWell)))
               .onTap,
           isNull);
       trips.registerGate!.complete();
@@ -344,7 +344,7 @@ void main() {
       await open(tester, UserRole.viajero);
       await tapVisible(tester, find.text('Mi viaje'));
       await tapVisible(tester, find.text('Buscar encomiendas de mi ruta'));
-      expect(find.text('Encomiendas\nde tu ruta.'), findsOneWidget);
+      expect(find.text('Encomiendas de tu ruta'), findsOneWidget);
       expect(find.textContaining('No hay encomiendas disponibles'),
           findsOneWidget);
     });

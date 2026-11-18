@@ -113,87 +113,89 @@ class _BuscarEncomiendasScreenState extends State<BuscarEncomiendasScreen> {
     if (mounted) await _load(keepMessages: true);
   }
 
-  void _openTrip() => Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-          settings: const RouteSettings(name: '/viajes/mio'),
-          builder: (_) => const MiViajeScreen()));
+  void _openTrip() => Navigator.of(context).push(MaterialPageRoute<void>(
+      settings: const RouteSettings(name: '/viajes/mio'),
+      builder: (_) => const MiViajeScreen()));
 
   @override
   Widget build(BuildContext context) {
     final trip = _trip;
     final result = _result;
     return AccessShell(
+        busy: _taking != null,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      AccessHeader(
-          eyebrow: 'BUSCAR ENCOMIENDAS',
-          title: 'Encomiendas\nde tu ruta.',
-          subtitle: trip == null
-              ? 'Te mostramos las encomiendas que coinciden con tu viaje disponible.'
-              : '${trip.origin} → ${trip.destination} · ${formatOptionalDate(trip.date, 'sin fecha')}'),
-      if (_notice != null)
-        InlineNotice(
-            title: 'Encomienda tomada',
-            message: _notice!,
-            onClose: () => setState(() => _notice = null)),
-      if (_error != null)
-        InlineNotice(
-            title: 'No se completó la acción', message: _error!, error: true),
-      if (_loading && result == null)
-        const LoadingBlock()
-      else if (_checkedTrip && trip == null)
-        EmptyBlock(
-            icon: Icons.flight_takeoff_rounded,
-            message:
-                'Primero registra tu viaje. Buscaremos encomiendas con su mismo origen y destino.',
-            action: FilledButton.icon(
-                onPressed: _openTrip,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Registrar mi viaje')))
-      else if (result != null) ...[
-        OutlinedButton.icon(
-            onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Actualizar')),
-        const SizedBox(height: 20),
-        _heading('Disponibles · ${result.available.length}'),
-        if (result.available.isEmpty)
-          const EmptyBlock(
-              icon: Icons.inbox_outlined,
-              message:
-                  'No hay encomiendas disponibles en tu ruta por ahora. Vuelve a revisar más tarde.')
-        else
-          for (final shipment in result.available)
-            ShipmentCard(
-                shipment: shipment,
-                showOwner: true,
-                action: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                        key: ValueKey('tomar-${shipment.id}'),
-                        onPressed: _taking == null && !_loading
-                            ? () => _take(shipment)
-                            : null,
-                        icon: _taking == shipment.id
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.handshake_outlined),
-                        label: const Text('Tomar encomienda')))),
-        if (result.taken.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _heading('Ya las tomaste · ${result.taken.length}'),
-          for (final shipment in result.taken)
-            ShipmentCard(shipment: shipment, showOwner: true),
-        ],
-      ] else if (_error != null)
-        OutlinedButton.icon(
-            onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Reintentar')),
-      const SizedBox(height: 16),
-    ]));
+          AccessHeader(
+              eyebrow: 'BUSCAR ENCOMIENDAS',
+              title: 'Encomiendas de tu ruta',
+              subtitle: trip == null
+                  ? 'Te mostramos las encomiendas que coinciden con tu viaje disponible.'
+                  : '${trip.origin} → ${trip.destination} · ${formatOptionalDate(trip.date, 'sin fecha')}'),
+          if (_notice != null)
+            InlineNotice(
+                title: 'Encomienda tomada',
+                message: _notice!,
+                onClose: () => setState(() => _notice = null)),
+          if (_error != null)
+            InlineNotice(
+                title: 'No se completó la acción',
+                message: _error!,
+                error: true),
+          if (_loading && result == null)
+            const LoadingBlock()
+          else if (_checkedTrip && trip == null)
+            EmptyBlock(
+                icon: Icons.flight_takeoff_rounded,
+                message:
+                    'Primero registra tu viaje. Buscaremos encomiendas con su mismo origen y destino.',
+                action: FilledButton.icon(
+                    onPressed: _openTrip,
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Registrar mi viaje')))
+          else if (result != null) ...[
+            OutlinedButton.icon(
+                onPressed: _loading ? null : _load,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Actualizar')),
+            const SizedBox(height: 20),
+            _heading('Disponibles · ${result.available.length}'),
+            if (result.available.isEmpty)
+              const EmptyBlock(
+                  icon: Icons.inbox_outlined,
+                  message:
+                      'No hay encomiendas disponibles en tu ruta por ahora. Vuelve a revisar más tarde.')
+            else
+              for (final shipment in result.available)
+                ShipmentCard(
+                    shipment: shipment,
+                    showOwner: true,
+                    action: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                            key: ValueKey('tomar-${shipment.id}'),
+                            onPressed: _taking == null && !_loading
+                                ? () => _take(shipment)
+                                : null,
+                            icon: _taking == shipment.id
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2))
+                                : const Icon(Icons.handshake_outlined),
+                            label: const Text('Tomar encomienda')))),
+            if (result.taken.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _heading('Ya las tomaste · ${result.taken.length}'),
+              for (final shipment in result.taken)
+                ShipmentCard(shipment: shipment, showOwner: true),
+            ],
+          ] else if (_error != null)
+            OutlinedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Reintentar')),
+          const SizedBox(height: 16),
+        ]));
   }
 
   Widget _heading(String text) => Padding(

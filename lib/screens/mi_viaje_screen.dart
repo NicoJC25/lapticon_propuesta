@@ -140,34 +140,36 @@ class _MiViajeScreenState extends State<MiViajeScreen> {
           notice: _notice);
     }
     return AccessShell(
+        busy: _busy,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      AccessHeader(
-          eyebrow: 'MI VIAJE',
-          title:
-              trip == null ? 'Registra\ntu viaje.' : 'Tu viaje\nestá activo.',
-          subtitle: trip == null
-              ? 'Selecciona origen, destino y fecha para ver vuelos disponibles.'
-              : 'Los remitentes de esta ruta pueden encontrarte. Busca encomiendas para llevar.'),
-      if (_notice != null)
-        InlineNotice(
-            message: _notice!, onClose: () => setState(() => _notice = null)),
-      if (_error != null)
-        InlineNotice(title: 'Revisa tu viaje', message: _error!, error: true),
-      if (_loading)
-        const LoadingBlock()
-      else if (_loadError != null) ...[
-        InlineNotice(
-            title: 'No se pudo consultar tu viaje',
-            message: _loadError!,
-            error: true),
-        OutlinedButton.icon(
-            onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Reintentar')),
-      ] else if (trip != null)
-        _tripView(trip),
-      const SizedBox(height: 16),
-    ]));
+          AccessHeader(
+              eyebrow: 'MI VIAJE',
+              title: trip == null ? 'Registrar viaje' : 'Mi viaje activo',
+              subtitle: trip == null
+                  ? 'Selecciona origen, destino y fecha para ver vuelos disponibles.'
+                  : 'Los remitentes de esta ruta pueden encontrarte. Busca encomiendas para llevar.'),
+          if (_notice != null)
+            InlineNotice(
+                message: _notice!,
+                onClose: () => setState(() => _notice = null)),
+          if (_error != null)
+            InlineNotice(
+                title: 'Revisa tu viaje', message: _error!, error: true),
+          if (_loading)
+            const LoadingBlock()
+          else if (_loadError != null) ...[
+            InlineNotice(
+                title: 'No se pudo consultar tu viaje',
+                message: _loadError!,
+                error: true),
+            OutlinedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Reintentar')),
+          ] else if (trip != null)
+            _tripView(trip),
+          const SizedBox(height: 16),
+        ]));
   }
 
   Widget _tripView(Trip trip) =>

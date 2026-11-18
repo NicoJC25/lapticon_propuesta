@@ -1,3 +1,4 @@
+import '../config/evaluation_features.dart';
 import 'package:flutter/material.dart';
 import '../widgets/access_components.dart';
 import '../widgets/access_shell.dart';
@@ -20,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_form.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
     final password = _password.text;
-    _password.clear();
     auth.signIn(_email.text, password);
   }
 
@@ -33,12 +33,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => AccessShell(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      busy: AuthScope.of(context).busy,
+      changes: Listenable.merge([_email, _password]),
+      isDirty: () => _email.text.isNotEmpty || _password.text.isNotEmpty,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const AccessHeader(
-            eyebrow: 'TU PRÓXIMA CONEXIÓN EMPIEZA AQUÍ',
-            title: 'Qué bueno\nverte de nuevo.',
+            eyebrow: 'BIENVENIDO A LAPTICON',
+            title: 'Accede a tu cuenta',
             subtitle: 'Ingresa a tu cuenta y sigue conectando destinos.'),
+        const Text('Todos los campos son obligatorios.'),
+        const SizedBox(height: 16),
         Form(
             key: _form,
             child: Column(children: [
@@ -72,8 +76,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   busy: AuthScope.of(context).busy,
                   onPressed: AuthScope.of(context).canSubmit ? _submit : null),
             ])),
-        const OrDivider(),
-        const GoogleAction(),
+        if (EvaluationFeatures.googleVisible(context)) ...[
+          const OrDivider(),
+          const GoogleAction()
+        ],
         const AccessFooter(
             prompt: '¿Primera vez por aquí?',
             action: 'Crea una cuenta',

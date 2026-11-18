@@ -1,3 +1,4 @@
+import '../widgets/page_navigation.dart';
 import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
 import '../roles/role_controller.dart';
@@ -8,7 +9,8 @@ import '../widgets/access_shell.dart';
 
 /// Primera pantalla de una sesión sin rol: el usuario elige remitente o viajero.
 class RoleSelectionScreen extends StatelessWidget {
-  const RoleSelectionScreen({super.key});
+  const RoleSelectionScreen({super.key, this.returnToMenu = false});
+  final bool returnToMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -16,26 +18,46 @@ class RoleSelectionScreen extends StatelessWidget {
     final roles = RoleScope.of(context);
     final name = auth.profile?.fullName ?? '';
     return AccessShell(
+        backLabel: returnToMenu ? 'Volver al menú' : 'Volver al acceso',
+        busy: roles.saving || auth.busy,
+        onBack: returnToMenu
+            ? () async {
+                Navigator.of(context).pop();
+              }
+            : () => confirmSignOut(context),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      AccessHeader(
-          back: false,
-          eyebrow: 'ELIGE TU ROL',
-          title: '¿Cómo quieres\nusar Lapticon?',
-          subtitle: name.isNotEmpty ? 'Hola, $name.' : 'Bienvenido a Lapticon.'),
-      const Text(
-          'Elige con qué rol quieres empezar. Puedes cambiarlo después desde tu menú.'),
-      const SizedBox(height: 20),
-      for (final role in UserRole.values)
-        _RoleOption(
-            role: role,
-            busy: roles.saving,
-            onPressed: roles.saving ? null : () => roles.choose(role)),
-      const SizedBox(height: 12),
-      TextButton.icon(
-          onPressed: auth.canSubmit && !roles.saving ? auth.signOut : null,
-          icon: const Icon(Icons.logout_rounded),
-          label: const Text('Cerrar sesión')),
-    ]));
+          AccessHeader(
+              back: false,
+              eyebrow: 'ELIGE TU ROL',
+              title: '¿Cómo quieres\nusar Lapticon?',
+              subtitle:
+                  name.isNotEmpty ? 'Hola, $name.' : 'Bienvenido a Lapticon.'),
+          const Text(
+              'Elige con qué rol quieres empezar. Puedes cambiarlo después desde tu menú.'),
+          const SizedBox(height: 20),
+          for (final role in UserRole.values)
+            Builder(
+                builder: (context) => _RoleOption(
+                    role: role,
+                    busy: roles.saving,
+                    onPressed: roles.saving
+                        ? null
+                        : () async {
+                            await roles.choose(role);
+                            if (returnToMenu && roles.role == role) {
+                              await WidgetsBinding.instance.endOfFrame;
+                              if (context.mounted) {
+                                await PageNavigation.of(context)
+                                    ?.leave(() => Navigator.of(context).pop());
+                              }
+                            }
+                          })),
+          const SizedBox(height: 12),
+          TextButton.icon(
+              onPressed: auth.canSubmit && !roles.saving ? auth.signOut : null,
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Cerrar sesión')),
+        ]));
   }
 }
 

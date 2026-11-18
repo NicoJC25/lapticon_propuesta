@@ -79,7 +79,7 @@ class _MisEncomiendasScreenState extends State<MisEncomiendasScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const AccessHeader(
           eyebrow: 'MIS ENCOMIENDAS',
-          title: 'Sigue tus\nencomiendas.',
+          title: 'Mis encomiendas',
           subtitle:
               'Las que pasan su fecha límite se marcan como vencidas al actualizar.'),
       if (_error != null)

@@ -71,8 +71,8 @@ class _RatingsScreenState extends State<RatingsScreen> {
         AccessHeader(
             eyebrow: 'CALIFICACIONES',
             title: widget.targetRole == UserRole.viajero
-                ? 'Calificar\nviajeros.'
-                : 'Calificar\nremitentes.',
+                ? 'Calificar viajeros'
+                : 'Calificar remitentes',
             subtitle:
                 'Solo puedes calificar a la otra persona después de una entrega recibida.'),
         if (widget.targetRole == UserRole.remitente)

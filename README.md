@@ -1,5 +1,7 @@
 # Lapticon para Android
 
+**Alcance de evaluación actual:** registro de usuarios, encomiendas, viajes e interacción sin chat, incluida entrega y calificación. Consulta [ALCANCE_EVALUACION.md](ALCANCE_EVALUACION.md) para los pendientes vigentes del profesor y la revisión de navegación. La rama es `revision-ux-ui`; la carpeta del proyecto mantiene su nombre.
+
 **Semana 4, cambio 1:** marcar la entrega con confirmación, para remitente y viajero asignado. Implementado en la rama `entrega-semana-cuatro`, aislada en esta carpeta. Consulta [SEMANA_4_ENTREGA.md](SEMANA_4_ENTREGA.md) para alcance, ejecución, pruebas y límites del listado de pendientes. Chat y calificaciones quedan para cambios posteriores.
 
 **Correcciones del 9 de noviembre:** búsqueda de vuelos por ruta mediante el servicio incluido en `flight_proxy/`, autocompletado del viaje y confirmación antes de publicarlo; comprobación del rol mediante GET después del PUT; validaciones de vuelo corregidas y Google configurable. Consulta [VUELOS_Y_GOOGLE.md](VUELOS_Y_GOOGLE.md) para conectar proveedor y Google, y [ALCANCE_Y_PENDIENTES.md](ALCANCE_Y_PENDIENTES.md) para el estado de las cinco semanas. Estas conexiones externas todavía requieren configuración; no se simulan en la app.

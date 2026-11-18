@@ -33,12 +33,15 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   String? _error;
   bool _busy = false;
   bool _selecting = false;
+  bool _completed = false;
   bool get _locked => _busy || _selecting;
   Future<void> _select(FlightOption flight) async {
     if (_locked) return;
     final callback = widget.onSelected;
     if (callback == null) {
-      Navigator.of(context).pop(flight.draft);
+      setState(() => _completed = true);
+      await WidgetsBinding.instance.endOfFrame;
+      if (mounted) Navigator.of(context).pop(flight.draft);
       return;
     }
     setState(() {
@@ -106,13 +109,19 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       });
   @override
   Widget build(BuildContext context) => AccessShell(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      busy: _selecting,
+      isDirty: () =>
+          !_completed &&
+          (_origin != null ||
+              _destination != null ||
+              !DateUtils.isSameDay(
+                  _date, widget.initialDate ?? DateTime.now())),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const AccessHeader(
             eyebrow: 'VUELOS POR RUTA',
             title: 'Elige tu vuelo.',
             subtitle:
-                'Selecciona origen y destino entre las seis ciudades disponibles y elige la fecha. Elige un vuelo publicado para completar automáticamente número, ruta y fecha del viaje.'),
+                'Elige las ciudades y la fecha. Después selecciona un vuelo para completar los datos de tu viaje.'),
         if (_error != null) InlineNotice(message: _error!, error: true),
         if (widget.notice != null) InlineNotice(message: widget.notice!),
         Form(
@@ -152,12 +161,23 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
               'No hay vuelos publicados para esta ruta y fecha dentro de la cobertura del proveedor.'),
         for (final flight in _flights ?? <FlightOption>[])
           Card(
-              child: ListTile(
-                  isThreeLine: true,
-                  title: Text('${flight.number} · ${flight.airline}'),
-                  subtitle: Text(
-                      '${flight.originCode} → ${flight.destinationCode}\n${flight.departure} (hora local de salida)'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: _locked ? null : () => _select(flight))),
+              child: InkWell(
+                  onTap: _locked ? null : () => _select(flight),
+                  child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${flight.number} · ${flight.airline}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 6),
+                            Text(
+                                '${flight.originCode} → ${flight.destinationCode}'),
+                            Text('${flight.departure} (hora local de salida)'),
+                            const SizedBox(height: 8),
+                            const Text('Seleccionar vuelo',
+                                style: TextStyle(fontWeight: FontWeight.w700)),
+                          ])))),
       ]));
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'journey_art.dart';
 import 'access_components.dart';
+import 'page_navigation.dart';
 
 class Brand extends StatelessWidget {
   const Brand({super.key});
@@ -37,64 +38,183 @@ class Brand extends StatelessWidget {
       );
 }
 
-class AccessShell extends StatelessWidget {
-  const AccessShell({super.key, required this.child, this.welcome = false});
+class AccessShell extends StatefulWidget {
+  const AccessShell(
+      {super.key,
+      required this.child,
+      this.welcome = false,
+      this.backLabel = 'Volver',
+      this.onBack,
+      this.isDirty,
+      this.changes,
+      this.busy = false});
   final Widget child;
-  final bool welcome;
+  final bool welcome, busy;
+  final String backLabel;
+  final Future<void> Function()? onBack;
+  final bool Function()? isDirty;
+  final Listenable? changes;
+  @override
+  State<AccessShell> createState() => _AccessShellState();
+}
+
+class _AccessShellState extends State<AccessShell> {
+  final _activity = NavigationActivity();
+  bool _leaving = false, _allowPop = false;
+  bool get _busy => widget.busy || _activity.busy;
+  bool get _dirty => widget.isDirty?.call() ?? false;
+  @override
+  void initState() {
+    super.initState();
+    _activity.addListener(_changed);
+    widget.changes?.addListener(_changed);
+  }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: LayoutBuilder(builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 900;
-            final padding = wide ? 40.0 : 24.0;
-            return Column(children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                    padding, wide ? 26 : 18, padding, wide ? 26 : 12),
-                child: SizedBox(
-                    width: double.infinity,
-                    child: Wrap(
-                        alignment: WrapAlignment.spaceBetween,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 20,
-                        runSpacing: 10,
-                        children: [
-                          const Brand(),
-                          Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F2EF),
-                                  borderRadius: BorderRadius.circular(30)),
-                              child: const Text('PROTOTIPO',
-                                  style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.2,
-                                      color: AppColors.teal))),
-                        ])),
-              ),
-              Expanded(
-                  child: wide
-                      ? Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                          child: Row(children: [
-                            const Expanded(child: _StoryPanel()),
-                            Expanded(child: _ScrollableContent(child: child)),
-                          ]),
-                        )
-                      : _ScrollableContent(
-                          child: Column(children: [
-                          if (welcome)
-                            const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 6),
-                                child: JourneyArt()),
-                          child,
-                        ]))),
-            ]);
-          }),
-        ),
+  void didUpdateWidget(AccessShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.changes != widget.changes) {
+      oldWidget.changes?.removeListener(_changed);
+      widget.changes?.addListener(_changed);
+    }
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.changes?.removeListener(_changed);
+    _activity.removeListener(_changed);
+    _activity.dispose();
+    super.dispose();
+  }
+
+  Future<void> _leave(VoidCallback? destination) async {
+    if (_busy || _leaving || widget.welcome) return;
+    _leaving = true;
+    FocusScope.of(context).unfocus();
+    try {
+      if (_dirty) {
+        final discard = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+                    scrollable: true,
+                    title: const Text('¿Descartar los cambios?'),
+                    content: const Text(
+                        'Tienes datos sin enviar. Si sales ahora, se perderán los cambios de este formulario.'),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Seguir editando')),
+                      FilledButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Descartar cambios'))
+                    ]));
+        if (discard != true || !mounted || _busy) return;
+      }
+      if (!mounted || _busy) return;
+      if (destination != null || widget.onBack != null) {
+        setState(() => _allowPop = true);
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted) return;
+        if (destination != null) {
+          destination();
+        } else {
+          await widget.onBack!();
+        }
+        return;
+      }
+      final navigator = Navigator.of(context);
+      if (navigator.canPop()) {
+        setState(() => _allowPop = true);
+        await WidgetsBinding.instance.endOfFrame;
+        if (mounted) navigator.pop();
+      } else {
+        navigator.pushReplacementNamed('/');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _leaving = false;
+          _allowPop = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope<Object?>(
+        canPop: widget.welcome ||
+            _allowPop ||
+            (!_busy &&
+                !_dirty &&
+                widget.onBack == null &&
+                MediaQuery.viewInsetsOf(context).bottom == 0 &&
+                Navigator.canPop(context)),
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+            FocusScope.of(context).unfocus();
+            return;
+          }
+          _leave(null);
+        },
+        child: PageNavigation(
+            activity: _activity,
+            leave: _leave,
+            child: Scaffold(
+              body: SafeArea(
+                  child: LayoutBuilder(builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 900;
+                return Column(children: [
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 6),
+                      child: widget.welcome
+                          ? const Align(
+                              alignment: Alignment.centerLeft, child: Brand())
+                          : Row(children: [
+                              Expanded(
+                                  child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: TextButton.icon(
+                                          key: const ValueKey('page-back'),
+                                          onPressed: _busy || _leaving
+                                              ? null
+                                              : () => _leave(null),
+                                          icon: const Icon(
+                                              Icons.arrow_back_rounded),
+                                          label: Text(widget.backLabel)))),
+                              Semantics(
+                                  label: 'Lapticon',
+                                  child: const ExcludeSemantics(
+                                      child: Icon(Icons.near_me_rounded,
+                                          color: AppColors.teal, size: 28))),
+                            ])),
+                  Expanded(
+                      child: wide
+                          ? Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                              child: Row(children: [
+                                const Expanded(child: _StoryPanel()),
+                                Expanded(
+                                    child:
+                                        _ScrollableContent(child: widget.child))
+                              ]))
+                          : _ScrollableContent(
+                              child: Column(children: [
+                              if (widget.welcome)
+                                const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 6),
+                                    child: JourneyArt()),
+                              widget.child,
+                            ]))),
+                ]);
+              })),
+            )),
       );
 }
 
@@ -102,22 +222,19 @@ class _ScrollableContent extends StatelessWidget {
   const _ScrollableContent({required this.child});
   final Widget child;
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+  Widget build(BuildContext context) => SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        child: Align(
+            alignment: Alignment.topCenter,
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                  minHeight:
-                      (constraints.maxHeight - 32).clamp(0, double.infinity)),
-              child: Center(
-                  child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 420),
-                      child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [const AuthStatus(), child]))),
-            ),
-          ));
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [const AuthStatus(), child]),
+            )),
+      );
 }
 
 class _StoryPanel extends StatelessWidget {
