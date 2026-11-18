@@ -1,130 +1,132 @@
-# Lapticon para Android
+# Lapticon Android
 
-**Alcance de evaluación actual:** registro de usuarios, encomiendas, viajes e interacción sin chat, incluida entrega y calificación. Consulta [ALCANCE_EVALUACION.md](ALCANCE_EVALUACION.md) para los pendientes vigentes del profesor y la revisión de navegación. La rama es `revision-ux-ui`; la carpeta del proyecto mantiene su nombre.
+**Versión 1.0.0 · Primera versión funcional para evaluación académica.**
 
-**Semana 4, cambio 1:** marcar la entrega con confirmación, para remitente y viajero asignado. Implementado en la rama `entrega-semana-cuatro`, aislada en esta carpeta. Consulta [SEMANA_4_ENTREGA.md](SEMANA_4_ENTREGA.md) para alcance, ejecución, pruebas y límites del listado de pendientes. Chat y calificaciones quedan para cambios posteriores.
+Lapticon conecta a quienes envían encomiendas con viajeros que pueden llevarlas en su ruta. Está desarrollada en Flutter y Dart para Android. La entrega reúne registro de usuarios, encomiendas, viajes e interacción sin chat, con seguimiento, entrega y calificaciones.
 
-**Correcciones del 9 de noviembre:** búsqueda de vuelos por ruta mediante el servicio incluido en `flight_proxy/`, autocompletado del viaje y confirmación antes de publicarlo; comprobación del rol mediante GET después del PUT; validaciones de vuelo corregidas y Google configurable. Consulta [VUELOS_Y_GOOGLE.md](VUELOS_Y_GOOGLE.md) para conectar proveedor y Google, y [ALCANCE_Y_PENDIENTES.md](ALCANCE_Y_PENDIENTES.md) para el estado de las cinco semanas. Estas conexiones externas todavía requieren configuración; no se simulan en la app.
+El funcionamiento real requiere el Firebase y la API del profesor, además del catálogo de vuelos. Los archivos locales no se descargan con Git. Sin configuración Firebase válida, la app abre e indica **Conexión con Firebase pendiente**; no simula el ingreso.
 
-Aplicación Android en Flutter. **Fase 1:** autenticación con correo y contraseña, Google, registro, recuperación, restauración y cierre de sesión. **Fase 2:** selección de rol (remitente o viajero), menús por rol y creación de encomiendas con `POST /api/encomiendas`. **Semana 3:** Mis encomiendas por estado, registro de viaje con validación del vuelo, y búsqueda y toma de encomiendas.
+## Funciones de esta versión
 
-**Estado actual:** Android usa `com.lapticon.app` y el proyecto Firebase `lapticon-eba31`. El archivo del profesor se coloca localmente en `android/app/google-services.json` (ignorado por Git). Correo, registro y recuperación usan Firebase; Google permanece deshabilitado hasta registrar la firma SHA-1 y actualizar la configuración. Sin el archivo, la app sigue mostrando la conexión pendiente.
+- Registro e ingreso con correo y contraseña, recuperación, sesión persistente y cierre de sesión.
+- Elección de rol y menús para remitente y viajero.
+- Creación y consulta de encomiendas por estado.
+- Selección de vuelo por ciudades y fecha, registro y cancelación del viaje.
+- Búsqueda y toma de encomiendas de la ruta, marcado de entrega `recibida` y calificaciones.
+- Regreso fijo, confirmación de descarte y bloqueo de acciones durante envíos.
 
-Consulta **[CONEXION_FIREBASE.md](CONEXION_FIREBASE.md)** para completar la conexión, registrar la firma Android y configurar la dirección de la API. No introduzcas contraseñas administrativas ni claves de Firebase Admin en la app.
+Chat, chatbot, Google, matching con IA y vencimientos programados están **fuera del alcance evaluado**. Chat y Google conservan su código, con accesos ocultos. Hay restricciones del servidor documentadas en [Limitaciones y pendientes](docs/LIMITACIONES.md).
 
-## Ejecutar en Android
+## Requisitos
 
-Abre esta carpeta, donde está `pubspec.yaml`, en Android Studio. Inicia un emulador o conecta un teléfono por USB. Conserva JDK 17 para Gradle 8.3. Si necesitas especificar su ruta, configúrala en tu archivo de usuario `~/.gradle/gradle.properties`, sin subir rutas personales al repositorio.
+| Componente | Requisito o versión utilizada |
+| --- | --- |
+| Flutter | 3.27.4, estable |
+| Dart | 3.6.2, incluido con ese Flutter |
+| JDK para Gradle | 17 |
+| Android | Android 6.0/API 23 o posterior; emulador probado con API 35 |
+| Herramientas | Android Studio, Android SDK y licencias aceptadas |
+| Red | Internet para Firebase, backend y catálogo |
 
-Desde PowerShell en esta carpeta:
+`pubspec.lock` fija las dependencias de la entrega. Node solo hace falta para trabajar en `flight_proxy/`; no se necesita para utilizar un proxy ya desplegado.
+
+## Ejecutar desde cero
+
+### 1 Descargar y preparar
+
+```powershell
+git clone --branch main https://github.com/NicoJC25/lapticon_propuesta.git
+cd lapticon_propuesta
+flutter --version
+flutter doctor -v
+flutter pub get
+```
+
+Si ya tienes el proyecto, ejecuta los comandos desde **la carpeta con `pubspec.yaml`**. En el equipo original se llama `outputs/entrega-semana-cuatro`; cambiar a `main` no modifica ese nombre.
+
+Selecciona JDK 17 como Gradle JDK en Android Studio. Si Flutter detecta otro, usa `flutter config --jdk-dir "RUTA_AL_JDK_17"`, sustituyendo el texto por tu ruta real. No agregues rutas personales al `android/gradle.properties` del repositorio.
+
+### 2 Configurar los servicios
+
+Coloca el archivo Android del profesor en **`android/app/google-services.json`**. Debe corresponder a `com.lapticon.app` y al mismo Firebase que valida el backend. Git lo excluye.
+
+Crea la configuración local si todavía no existe:
+
+```powershell
+if (!(Test-Path "config/android.local.json")) {
+    Copy-Item "config/android.example.json" "config/android.local.json"
+}
+```
+
+Revisa su contenido:
+
+```json
+{
+  "API_BASE_URL": "https://lapticon-backend.onrender.com",
+  "FLIGHT_SEARCH_BASE_URL": "https://lapticon-propuesta.onrender.com",
+  "GOOGLE_SIGN_IN_ENABLED": false,
+  "CHAT_FIRESTORE_ENABLED": false
+}
+```
+
+Las direcciones deben ser orígenes HTTPS, sin añadir `/api/...`. Son servicios externos y su disponibilidad depende de sus administradores. La clave RapidAPI va en el **servidor de vuelos**, nunca en Dart ni en este JSON. Más detalle en [Configuración](docs/CONFIGURACION.md).
+
+### 3 Iniciar en Android
+
+Enciende un emulador desde Android Studio o conecta un teléfono con depuración USB y autoriza el equipo.
+
+```powershell
+flutter devices
+flutter run -d emulator-5554 --dart-define-from-file=config/android.local.json
+```
+
+Sustituye `emulator-5554` por tu ID de dispositivo. Si `flutter.bat` falla en Windows, utiliza el invocador incluido:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 pub get
-powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 devices
-powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 run -d emulator-5554
+powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 run -d emulator-5554 --dart-define-from-file=config/android.local.json
 ```
 
-Sustituye `emulator-5554` por el identificador que muestre `devices`. También puedes usar los comandos equivalentes `flutter pub get`, `flutter devices` y `flutter run -d ...`; el script evita problemas con el wrapper `flutter.bat` de este equipo.
+Para el botón Run de Android Studio, abre esta carpeta, usa la entrada Flutter `lib/main.dart` y agrega `--dart-define-from-file=config/android.local.json` en **Additional run args**. Detén y recompila después de cambiar Firebase o estos valores; hot reload no aplica la configuración nativa ni las constantes compiladas.
 
-Requisitos de esta entrega: Flutter 3.27.4, Dart 3.6.2, JDK 17, Android SDK y Android 6.0/API 23 o posterior. Las versiones de Firebase y Google están limitadas a las compatibles con esta cadena de compilación y fijadas en `pubspec.lock`. La autenticación web e iOS no forma parte de esta entrega; los archivos web anteriores se conservan como referencia visual.
+## Generar un APK
 
-## Flujo implementado
-
-- Firebase administra las identidades, la sesión persistente y las contraseñas. El cliente no guarda contraseñas ni mantiene un almacén propio de tokens.
-- Cada petición de perfiles obtiene un ID token y lo envía en `Authorization: Bearer`. No se registra el token en los logs ni se siguen redirecciones HTTP.
-- Login consulta `GET /api/users/{uid}`. Una cuenta nueva guarda nombre, apellido y correo con `POST /api/users/register`. Un perfil existente nunca se sobrescribe al ingresar.
-- Una cuenta autenticada sin perfil debe completarlo. Si el guardado falla, puede reintentarse sin recrear la cuenta Firebase. El reintento consulta primero si el perfil ya existe.
-- Ante un 401 se fuerza una renovación y se reintenta una sola vez. Un segundo 401 cierra la sesión. Un 403 conserva la sesión y comunica el error de permisos. Hay mensajes separados para red, tiempo agotado y errores del servidor.
-- La recuperación solo confirma la solicitud después de que Firebase la acepte. La respuesta no revela si un correo tiene cuenta. Se utiliza el manejador de recuperación alojado por Firebase.
-- Las rutas protegidas se comprueban también al abrirlas directamente. Con el perfil completo, la sesión pasa a la selección de rol (fase 2).
-
-## Fase 2: roles y encomiendas
-
-Corresponde a las prácticas 2 y 3 del plan (semana 2: roles y crear encomienda).
-
-```
-Login ─► Perfil completo ─► RoleRedirectorScreen ─┬─► Elegir rol (sin rol guardado)
-                                                  ├─► Menú remitente ─► Crear encomienda
-                                                  └─► Menú viajero
+```powershell
+flutter build apk --debug --dart-define-from-file=config/android.local.json
 ```
 
-- **Elegir rol.** Tras el login, un usuario sin rol elige *remitente* o *viajero*. Puede cambiarlo desde su menú con **Cambiar de rol**.
-- **Dónde vive el rol.** Se lee primero del perfil del backend (campo `rol`) y, si no está, de una caché en `SharedPreferences` guardada **por uid** (dos cuentas en el mismo teléfono no comparten rol). Al elegir se guarda en la caché y se envía con `PUT /api/users/{uid}` (`nombre`, `apellido`, `rol`); después se hace GET para verificar persistencia. Si no se confirma, el menú muestra el aviso y permite reintentar la sincronización.
-- **Limitación conocida del backend.** El modelo `Usuario` del Swagger no tiene campo `rol`. Si el servidor no lo devuelve tras el `PUT`, la app muestra el aviso *Rol guardado en el teléfono*: funciona en ese dispositivo, pero no se recupera en otro. Cuando el backend agregue el campo, el rol se sincronizará sin cambiar la app.
-- **Menú remitente.** *Crear encomienda* está activo. *Mis encomiendas* y *Calificar viajeros* aparecen como pendientes de las semanas 3 y 4.
-- **Menú viajero.** *Registrar viaje*, *Buscar encomiendas* y *Mis entregas* aparecen como pendientes de las semanas 3 y 4.
-- **Crear encomienda.** Origen y destino se eligen con país y ciudad (`GET /api/ciudades/paises` y `GET /api/ciudades/ciudades-por-pais`, rutas públicas sin token, con búsqueda que ignora tildes). Se valida que destino ≠ origen, que haya descripción (máx. 300 caracteres) y que el valor sea un entero entre 1 y 100.000.000. Moneda: COP, USD o EUR.
-- **Fecha límite opcional.** El `POST` del Swagger no documenta `fechaVencimiento`; la app la envía solo si el usuario la elige y la pantalla de confirmación muestra la fecha que devolvió el servidor, o avisa si no la confirmó.
-- **Errores.** Los 400 muestran el mensaje `error` de la API; red, tiempo agotado, 5xx y sesión vencida reutilizan el manejo de la fase 1 (renovación del token una sola vez ante 401). El botón se bloquea mientras se publica.
+Se genera `build/app/outputs/flutter-apk/app-debug.apk`. Es un APK de desarrollo para evaluación. La configuración actual de release también utiliza la firma debug; publicar en tiendas requiere firma y preparación propias.
 
-Preguntas abiertas para el profesor: si el backend agregará `rol` al modelo `Usuario`, si el `POST` acepta `fechaVencimiento` y qué valores admite `moneda`.
+## Verificar
 
-## Semana 3: viajes, búsqueda y toma de encomiendas
-
-Corresponde a las prácticas 3 y 4 (listas por estado, registro de viaje validado y tomar encomienda).
-
-```
-Remitente: Menú ─► Mis encomiendas (disponibles · tomadas · recibidas · vencidas)
-Viajero:   Menú ─► Mi viaje ─► validar vuelo ─► POST /api/viajes ─► Buscar encomiendas de mi ruta ─► Tomar
+```powershell
+flutter analyze
+flutter test
 ```
 
-- **Mis encomiendas (remitente).** `GET /api/encomiendas`, agrupadas por estado con filtros y conteo. El backend marca las vencidas al consultar, así que la lista se refresca con **Actualizar** y al volver de crear una.
-- **Mi viaje (viajero).** Muestra el viaje activo y permite cancelarlo. Si no hay uno, abre directamente origen, destino y fecha; consulta vuelos publicados y permite seleccionar y confirmar el registro, sin escribir el número del vuelo.
-- **Selección del vuelo.** El catálogo real se consulta mediante el servicio configurado en `FLIGHT_SEARCH_BASE_URL`. El vuelo elegido aporta automáticamente número, ciudades y fecha. Si no hay vuelos o falla la consulta, se informa y se permite reintentar; no se ofrece registrar sin validar.
-- **Buscar y tomar.** Con la ruta del viaje activo se llama `GET /api/encomiendas/buscar` (`{ disponibles, tomadas }`). **Tomar** pide confirmación y usa `PUT /api/encomiendas/tomar/{id}`; si otro viajero la tomó antes, se muestra el mensaje de la API y se recarga la lista.
-- **Fechas.** Las fechas sin hora de la API (`2026-11-07T00:00:00.000Z`) se muestran en UTC para que en Colombia no aparezcan como el día anterior.
-- **Semana 4:** marcar como recibida y calificaciones entre participantes implementados. Chat preparado; conexión Firestore pendiente. Consulta `SEMANA_4_CALIFICACIONES.md` para el alcance y las limitaciones del historial.
+El recorrido Android con servicios simulados guarda capturas y evita escribir datos en los servicios del salón:
 
-## Organización
+```powershell
+flutter drive --driver=test_driver/ux_android_driver.dart --target=integration_test/ux_android_test.dart -d emulator-5554 --no-enable-impeller
+```
 
-| Elemento | Responsabilidad |
+La aceptación con dos cuentas reales sigue siendo independiente. Consulta el [plan y los resultados de pruebas](docs/PRUEBAS.md).
+
+## Documentación
+
+| Documento | Contenido |
 | --- | --- |
-| `lib/auth/` | Contrato de autenticación, adaptador Firebase, estado de sesión y operaciones |
-| `lib/data/` | Cliente HTTP compartido (`api_client.dart`), perfiles, encomiendas y viajes |
-| `lib/utils/` | Formatos de fecha y dinero |
-| `lib/roles/` | Rol del usuario, caché por uid y `RoleController` |
-| `lib/screens/` | Acceso (fase 1); rol, menús y crear encomienda (fase 2); mis encomiendas, mi viaje y buscar (semana 3) |
-| `lib/widgets/` y `lib/theme/` | Componentes visuales, accesibilidad, tema e ilustración local |
-| `config/android.example.json` | Ejemplo de `API_BASE_URL`; no contiene valores secretos |
-| `test/` | Pruebas de servicios, API e interfaz con servicios simulados |
-| `integration_test/` y `test_driver/` | Comprobación del arranque sin Firebase sobre Android real o emulado |
+| [Configuración](docs/CONFIGURACION.md) | Firebase, Android Studio, variables, proxy y solución de problemas |
+| [Manual de usuario](docs/MANUAL_USUARIO.md) | Recorridos del remitente y del viajero |
+| [Arquitectura](docs/ARQUITECTURA.md) | Componentes, servicios, datos y contratos |
+| [Pruebas](docs/PRUEBAS.md) | Reproducción, evidencia y aceptación pendiente |
+| [Limitaciones](docs/LIMITACIONES.md) | Restricciones de v1 y solicitudes al profesor |
+| [Cambios de versión](CHANGELOG.md) | Consolidación y funciones entregadas |
 
-Los controles visuales reciben sus datos a través de `AuthScope`, `RoleScope` y `ShipmentScope`. `AuthController` coordina `AuthService` y `UserRepository`; `RoleController` escucha la sesión y decide el rol; el código real usa `FirebaseAuthService`, `ApiUserRepository`, `SharedPreferencesRoleStore` y `ApiShipmentRepository`. Se pueden inyectar servicios de prueba sin cambiar las pantallas.
+Las guías de fases y semanas conservadas en la raíz documentan la evolución. **Este README y `docs/` describen la versión consolidada actual.** Las capturas iniciales pertenecen al prototipo; las recientes están en `capturas/revision-ux-ui/`, con su [procedencia](capturas/revision-ux-ui/README.md).
 
-## Pruebas y compilación
+## Configuración privada y recursos
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 analyze
-powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 test
-powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 build apk --debug
-```
+Git excluye entornos privados, configuración local Firebase, firmas y compilaciones. No se incluyen cuentas de prueba, contraseñas, tokens ni claves Firebase Admin. Firebase administra la sesión; la app obtiene el ID token para cada petición protegida.
 
-Las pruebas verifican validación, errores, cancelación de Google, reintento de perfil, sesión restaurada, acceso protegido, cierre y limpieza de sesión, concurrencia de envíos, contrato HTTP y renovación limitada de tokens. En la fase 2 se agregan: elección, restauración y cambio de rol, caché separada por uid, prioridad del rol del servidor, contrato de `POST /api/encomiendas` y de las rutas de ciudades, validación del formulario, reintento tras error y bloqueo del botón mientras se publica. También revisan el contraste y diseños de 320×568, 430×932 y 1280×800 con texto al 200 % y teclado simulado.
-
-Con un emulador encendido y **sin** `google-services.json`, la prueba de integración verifica la conexión pendiente y guarda una captura de la pantalla de login:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\herramientas.ps1 drive --driver=test_driver/integration_test.dart --target=integration_test/unconfigured_android_test.dart -d emulator-5554
-```
-
-El APK de desarrollo se genera en `build/app/outputs/flutter-apk/app-debug.apk`. No abrirá una sesión real hasta configurar y recompilar el Firebase correcto. La compilación puede emitir avisos del SDK y AGP antiguos aunque termine correctamente.
-
-## Entrega y configuración local
-
-`android/app/google-services.json`, `config/*.local.json`, archivos de firma y propiedades locales quedan fuera del ZIP de entrega. Conserva los archivos de tu configuración por separado. Si ya hay una API válida no necesitas modificar nada: el destino predeterminado es `https://lapticon-backend.onrender.com`.
-
-La guía Word de ejecución entregada durante el prototipo sigue sirviendo para iniciar un emulador, pero sus referencias a sesiones de demostración pertenecen a la etapa visual anterior. Para activar esta versión, utiliza `CONEXION_FIREBASE.md`.
-
-## Recursos
-
-Fuente Manrope incluida localmente con su licencia OFL. Iconos Material de Flutter e ilustración vectorial local. Las capturas originales de la carpeta `capturas/` documentan el prototipo visual anterior; las verificaciones Android de esta etapa se guardan en `capturas/autenticacion/`.
-
-## Semana 4: calificaciones entre remitente y viajero
-
-El remitente entra desde **Calificar viajeros** o desde una encomienda recibida. El viajero entra desde **Calificar remitentes**, después de marcar una entrega desde este dispositivo. Se seleccionan entre 1 y 5 estrellas y un comentario opcional de hasta 500 caracteres. El destinatario y su rol se deducen de la encomienda; no se escriben identificadores.
-
-`ApiRatingRepository` consulta `GET /api/ratings/{uid}` y envía `POST /api/ratings` con el token Firebase. Antes de enviar consulta si el autor ya calificó a esa persona en ese rol; también comprueba el resultado cuando una respuesta se pierde. El backend no vincula la calificación con una encomienda concreta ni documenta un historial global de recibidas del viajero. Ver `SEMANA_4_CALIFICACIONES.md`.
-
-## Semana 4: chat preparado
-
-Las tarjetas de encomiendas tomadas o recibidas de ambos participantes incluyen **Abrir chat**. Se consulta el estado por la API existente, con el token Firebase. La conexión de mensajes está desactivada por defecto (`CHAT_FIRESTORE_ENABLED=false`) y muestra un aviso pendiente. Pantallas, streams, cierre, borrador y reintentos están preparados y cubiertos con servicios simulados. El adaptador Firestore usa un esquema propuesto que debe contrastarse con las reglas y los documentos del profesor antes de activarlo. Ver `SEMANA_4_CHAT.md` para la conexión final y sus verificaciones pendientes.
+La fuente Manrope conserva su [licencia OFL](assets/fonts/OFL.txt). La interfaz utiliza iconos Material e ilustraciones locales. El backend de negocio y su base de datos son servicios del profesor y no forman parte del repositorio.

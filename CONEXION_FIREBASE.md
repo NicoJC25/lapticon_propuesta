@@ -1,3 +1,5 @@
+> Guía histórica de la integración de autenticación. Para v1.0.0 en `main`, sigue [README.md](README.md) y [configuración actual](docs/CONFIGURACION.md). Google está oculto en esta entrega; la referencia a «Google · Pendiente» describe una interfaz anterior.
+
 # Firebase Android: acceso con correo
 
 ## Configuración actual

@@ -1,3 +1,5 @@
+> Registro de la revisión UX del 17 de noviembre. La entrega consolidada está ahora en `main`, versión 1.0.0. Consulta [README.md](README.md) y los [pendientes actualizados](docs/LIMITACIONES.md).
+
 # Alcance de evaluación y pendientes del profesor
 
 Revisión del 17 de noviembre de 2026. Rama `revision-ux-ui`, creada desde `entrega-semana-cuatro`. La carpeta del proyecto conserva el nombre `entrega-semana-cuatro`; cambiar de rama no requiere moverla.

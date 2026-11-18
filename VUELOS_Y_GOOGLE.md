@@ -1,3 +1,5 @@
+> En v1.0.0, Google queda fuera de la evaluación y oculto por `EvaluationFeatures` y la configuración visual de `LapticonApp`. Activar solo la variable del servicio no muestra su acceso. Las instrucciones de Google son para una integración futura. Consulta la [configuración actual](docs/CONFIGURACION.md).
+
 # Conectar búsqueda de vuelos y Google
 
 ## Vuelos por ruta
