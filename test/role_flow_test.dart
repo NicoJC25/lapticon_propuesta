@@ -141,21 +141,21 @@ void main() {
 
     // La búsqueda ignora tildes y mayúsculas.
     await tapVisible(tester, fieldTap('campo-destino'));
-    await tester.enterText(find.byType(TextField).last, 'espana');
+    await tester.enterText(find.byType(TextField).last, 'ESTADOS');
     await tester.pumpAndSettle();
     expect(find.text('Colombia'), findsNothing);
-    await tapVisible(tester, find.text('España'));
-    await tapVisible(tester, find.text('Madrid'));
-    expect(find.text('Madrid, España'), findsOneWidget);
+    await tapVisible(tester, find.text('Estados Unidos'));
+    await tapVisible(tester, find.text('Miami'));
+    expect(find.text('Miami, Estados Unidos'), findsOneWidget);
 
     await tapVisible(tester, find.text('Publicar encomienda'));
     expect(find.text('Encomienda publicada'), findsOneWidget);
-    expect(find.text('Bogotá → Madrid'), findsOneWidget);
+    expect(find.text('Bogotá → Miami'), findsOneWidget);
     expect(find.text('\$ 50.000 COP'), findsOneWidget);
     expect(find.text('Disponible'), findsOneWidget);
     expect(shipments.created.single.toJson(), {
       'ciudadOrigen': 'Bogotá',
-      'ciudadDestino': 'Madrid',
+      'ciudadDestino': 'Miami',
       'observaciones': 'Dos libros',
       'moneda': 'COP',
       'valor': 50000,
@@ -174,7 +174,7 @@ void main() {
     await open(tester);
     await tapVisible(tester, find.text('Crear encomienda'));
     await pickPlace(tester, 'campo-origen', 'Colombia', 'Cali');
-    await pickPlace(tester, 'campo-destino', 'España', 'Barcelona');
+    await pickPlace(tester, 'campo-destino', 'Estados Unidos', 'Washington');
     await tester.enterText(
         find.byKey(const ValueKey('campo-observaciones')), 'Café');
     await tester.enterText(find.byKey(const ValueKey('campo-valor')), '1200');
@@ -196,7 +196,7 @@ void main() {
     await open(tester);
     await tapVisible(tester, find.text('Crear encomienda'));
     await pickPlace(tester, 'campo-origen', 'Colombia', 'Cali');
-    await pickPlace(tester, 'campo-destino', 'España', 'Madrid');
+    await pickPlace(tester, 'campo-destino', 'Estados Unidos', 'Miami');
     await tester.enterText(
         find.byKey(const ValueKey('campo-observaciones')), 'Café');
     await tester.enterText(find.byKey(const ValueKey('campo-valor')), '1200');
@@ -214,17 +214,47 @@ void main() {
     expect(find.text('Encomienda publicada'), findsOneWidget);
   });
 
-  testWidgets('Lista de lugares con error permite reintentar', (tester) async {
+  testWidgets(
+      'Encomienda limita las seis ciudades aunque falle el catálogo remoto',
+      (tester) async {
     store.roles['u-123'] = UserRole.remitente;
     shipments.placesFailure =
         const AppFailure('No se pudo conectar con la API.', code: 'network');
     await open(tester);
     await tapVisible(tester, find.text('Crear encomienda'));
     await tapVisible(tester, fieldTap('campo-origen'));
-    expect(find.text('No se pudo conectar con la API.'), findsOneWidget);
-    shipments.placesFailure = null;
-    await tapVisible(tester, find.text('Reintentar'));
-    expect(find.text('Colombia'), findsOneWidget);
+    expect(find.text('España'), findsNothing);
+    expect(find.text('No se pudo conectar con la API.'), findsNothing);
+    expect(find.byType(ListTile), findsNWidgets(2));
+    await tapVisible(tester, find.text('Colombia'));
+    expect(find.byType(ListTile), findsNWidgets(3));
+    for (final city in ['Bogotá', 'Medellín', 'Cali']) {
+      expect(find.text(city), findsOneWidget);
+    }
+    await tapVisible(tester, find.text('Cambiar país'));
+    await tapVisible(tester, find.text('Estados Unidos'));
+    expect(find.byType(ListTile), findsNWidgets(3));
+    for (final city in ['New York', 'Miami', 'Washington']) {
+      expect(find.text(city), findsOneWidget);
+    }
+    expect(find.text('Madrid'), findsNothing);
+    await tapVisible(tester, find.text('Miami'));
+    await pickPlace(tester, 'campo-destino', 'Colombia', 'Cali');
+    await tapVisible(tester, find.byKey(const ValueKey('campo-moneda')));
+    expect(find.text('EUR'), findsNothing);
+    expect(find.text('USD'), findsOneWidget);
+    await tapVisible(tester, find.text('USD'));
+    await tester.enterText(
+        find.byKey(const ValueKey('campo-observaciones')), 'Libros');
+    await tester.enterText(find.byKey(const ValueKey('campo-valor')), '25');
+    await tapVisible(tester, find.text('Publicar encomienda'));
+    expect(shipments.created.single.toJson(), {
+      'ciudadOrigen': 'Miami',
+      'ciudadDestino': 'Cali',
+      'observaciones': 'Libros',
+      'moneda': 'USD',
+      'valor': 25,
+    });
   });
 
   test('Validación y formato del valor', () {

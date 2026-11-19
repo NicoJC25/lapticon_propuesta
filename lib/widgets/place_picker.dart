@@ -4,8 +4,8 @@ import '../data/shipment_repository.dart';
 import '../theme/app_theme.dart';
 import 'app_components.dart';
 
-/// Campo de formulario que elige país y ciudad con las listas públicas de
-/// `/api/ciudades`. La API de encomiendas recibe solo la ciudad.
+/// Selector de país y ciudad: usa la lista permitida si se proporciona;
+/// en otros casos consulta `/api/ciudades`. La API recibe solo la ciudad.
 class PlacePickerField extends FormField<Place> {
   PlacePickerField(
       {super.key,
@@ -13,6 +13,7 @@ class PlacePickerField extends FormField<Place> {
       required String hint,
       required IconData icon,
       required ShipmentRepository repository,
+      List<Place>? allowedPlaces,
       super.validator,
       super.enabled,
       ValueChanged<Place>? onChanged})
@@ -25,8 +26,10 @@ class PlacePickerField extends FormField<Place> {
                 useSafeArea: true,
                 showDragHandle: true,
                 backgroundColor: AppColors.paper,
-                builder: (_) =>
-                    PlaceSheet(title: label, repository: repository));
+                builder: (_) => PlaceSheet(
+                    title: label,
+                    repository: repository,
+                    allowedPlaces: allowedPlaces));
             if (place != null && state.mounted) {
               state.didChange(place);
               onChanged?.call(place);
@@ -73,9 +76,14 @@ class PlacePickerField extends FormField<Place> {
 
 /// Hoja inferior de dos pasos: país y luego ciudad.
 class PlaceSheet extends StatefulWidget {
-  const PlaceSheet({super.key, required this.title, required this.repository});
+  const PlaceSheet(
+      {super.key,
+      required this.title,
+      required this.repository,
+      this.allowedPlaces});
   final String title;
   final ShipmentRepository repository;
+  final List<Place>? allowedPlaces;
   @override
   State<PlaceSheet> createState() => _PlaceSheetState();
 }
@@ -111,9 +119,17 @@ class _PlaceSheetState extends State<PlaceSheet> {
     final request = ++_request;
     final country = _country;
     try {
-      final items = country == null
-          ? await widget.repository.countries()
-          : await widget.repository.cities(country);
+      final allowed = widget.allowedPlaces;
+      final items = allowed != null
+          ? (country == null
+              ? allowed.map((place) => place.country).toSet().toList()
+              : allowed
+                  .where((place) => place.country == country)
+                  .map((place) => place.city)
+                  .toList())
+          : country == null
+              ? await widget.repository.countries()
+              : await widget.repository.cities(country);
       if (!mounted || request != _request) return;
       setState(() => _items = items);
     } on AppFailure catch (e) {
@@ -121,7 +137,8 @@ class _PlaceSheetState extends State<PlaceSheet> {
       setState(() => _error = e.message);
     } catch (_) {
       if (!mounted || request != _request) return;
-      setState(() => _error = 'No se pudo cargar la lista. Inténtalo de nuevo.');
+      setState(
+          () => _error = 'No se pudo cargar la lista. Inténtalo de nuevo.');
     }
   }
 
@@ -149,8 +166,8 @@ class _PlaceSheetState extends State<PlaceSheet> {
         .toList();
     final choosingCity = _country != null;
     return Padding(
-        padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.85,
             child: Padding(
@@ -161,7 +178,8 @@ class _PlaceSheetState extends State<PlaceSheet> {
                       if (choosingCity)
                         TextButton.icon(
                             onPressed: _backToCountries,
-                            icon: const Icon(Icons.arrow_back_rounded, size: 17),
+                            icon:
+                                const Icon(Icons.arrow_back_rounded, size: 17),
                             label: const Text('Cambiar país'),
                             style:
                                 TextButton.styleFrom(padding: EdgeInsets.zero)),

@@ -77,3 +77,13 @@ Las pruebas de esta consolidación no escriben en los servicios compartidos. El 
 Este recorrido requiere cuentas y datos acordados. La comprobación completa entre dos cuentas reales permanece pendiente y no se presenta como aprobada.
 
 La compilación mostró avisos de acceso nativo de Java, compatibilidad de metadatos SDK y futura retirada de Android x86; finalizó correctamente. El APK se construyó con la configuración local real, sin ejecutar escrituras de negocio. La firma es de desarrollo.
+
+## Corrección de coincidencia de rutas
+
+En el diagnóstico real se consultó el viaje activo del usuario, sin escrituras: estaba guardado como `Santiago de Cali → Rionegro`. Esa búsqueda devolvía cero disponibles; `Cali → Medellín` devolvía una encomienda y `Cali → Medellin` devolvía cero. El servidor diferencia esos textos.
+
+El cliente ahora utiliza el IATA para asignar las ciudades del servicio al seleccionar el vuelo. Viajes y encomiendas nuevos serializan nombres compartidos. La lectura de viajes antiguos normaliza sus ciudades y la búsqueda consulta las variantes conocidas, unifica por ID y da prioridad a la lista de tomadas. No se modifican registros anteriores. El servidor sigue decidiendo permisos y disponibilidad al tomar una encomienda.
+
+`test/route_matching_test.dart` reproduce el vuelo CLO/MDE con municipios del proveedor, el viaje antiguo, las variantes de búsqueda, la eliminación de duplicados y los errores que no deben parecer listas vacías.
+
+Verificación posterior: análisis Flutter sin observaciones y **181 pruebas aprobadas**. APK recompilado e instalado. Desde los repositorios de la app actualizada y la sesión real del viajero, la lectura del viaje antiguo produjo `Cali → Medellín` y su búsqueda devolvió **1 disponible y 0 tomadas**. Esta comprobación no tomó ni modificó encomiendas y no reemplaza la aceptación de entrega y calificaciones.

@@ -81,7 +81,7 @@ void main() {
 
   Future<void> fillParcel(WidgetTester t) async {
     await place(t, 'campo-origen', 'Colombia', 'Cali');
-    await place(t, 'campo-destino', 'España', 'Madrid');
+    await place(t, 'campo-destino', 'Estados Unidos', 'Miami');
     await t.enterText(
         find.byKey(const ValueKey('campo-observaciones')), 'Libros');
     await t.enterText(find.byKey(const ValueKey('campo-valor')), '15000');

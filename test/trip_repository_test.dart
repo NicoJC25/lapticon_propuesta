@@ -203,15 +203,16 @@ void main() {
 
     test('Buscar envía origen y destino y separa disponibles y tomadas',
         () async {
-      late http.Request request;
+      final requests = <http.Request>[];
       final repo = ApiShipmentRepository(auth, client: MockClient((r) async {
-        request = r;
+        requests.add(r);
         return jsonResponse({
           'disponibles': [encomienda('e1', 'disponible')],
           'tomadas': [encomienda('e2', 'tomada')],
         });
       }));
       final result = await repo.search('Bogotá', 'Madrid');
+      final request = requests.first;
       expect(request.url.path, '/api/encomiendas/buscar');
       expect(request.url.queryParameters,
           {'origen': 'Bogotá', 'destino': 'Madrid'});

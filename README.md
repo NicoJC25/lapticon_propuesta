@@ -10,7 +10,7 @@ El funcionamiento real requiere el Firebase y la API del profesor, además del c
 
 - Registro e ingreso con correo y contraseña, recuperación, sesión persistente y cierre de sesión.
 - Elección de rol y menús para remitente y viajero.
-- Creación y consulta de encomiendas por estado.
+- Creación de encomiendas entre las seis ciudades habilitadas, pago en COP o USD y consulta por estado.
 - Selección de vuelo por ciudades y fecha, registro y cancelación del viaje.
 - Búsqueda y toma de encomiendas de la ruta, marcado de entrega `recibida` y calificaciones.
 - Regreso fijo, confirmación de descarte y bloqueo de acciones durante envíos.

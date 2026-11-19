@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../auth/auth_service.dart';
 import '../utils/format.dart';
 import 'api_client.dart';
+import 'flight_city.dart';
 
 /// Estados que maneja la API (`disponible · tomada · recibida · vencida`).
 enum ShipmentStatus {
@@ -26,7 +27,7 @@ enum ShipmentStatus {
 }
 
 /// Monedas que ofrece el formulario. La API recibe el código como texto.
-const shipmentCurrencies = ['COP', 'USD', 'EUR'];
+const shipmentCurrencies = ['COP', 'USD'];
 
 /// Lugar elegido en el formulario. La API solo recibe la ciudad.
 class Place {
@@ -60,8 +61,8 @@ class ShipmentDraft {
   final DateTime? expiresOn;
 
   Map<String, Object?> toJson() => {
-        'ciudadOrigen': origin.city,
-        'ciudadDestino': destination.city,
+        'ciudadOrigen': FlightCity.canonicalName(origin.city),
+        'ciudadDestino': FlightCity.canonicalName(destination.city),
         'observaciones': notes.trim(),
         'moneda': currency,
         'valor': value,
@@ -237,11 +238,40 @@ class ApiShipmentRepository implements ShipmentRepository {
 
   @override
   Future<ShipmentSearch> search(String origin, String destination) async {
+    final routes = [
+      for (final from in FlightCity.searchNames(origin))
+        for (final to in FlightCity.searchNames(destination)) (from, to)
+    ];
+    // Solo variantes concretas de las ciudades habilitadas; nunca se listan
+    // encomiendas de otras rutas. Consultas acotadas y sin escrituras.
+    final results = await Future.wait(
+        [for (final route in routes) _searchExact(route.$1, route.$2)]);
+    final available = <String, Shipment>{};
+    final taken = <String, Shipment>{};
+    for (final result in results) {
+      for (final item in result.available) {
+        available[item.id] = item;
+      }
+      for (final item in result.taken) {
+        taken[item.id] = item;
+      }
+    }
+    // Si el estado cambió entre consultas, no ofrecer tomarla otra vez.
+    for (final id in taken.keys) {
+      available.remove(id);
+    }
+    return ShipmentSearch(
+        available: available.values.toList(), taken: taken.values.toList());
+  }
+
+  Future<ShipmentSearch> _searchExact(String origin, String destination) async {
     final response = await _api.send('GET', '/api/encomiendas/buscar',
         query: {'origen': origin, 'destino': destination},
         forbiddenMessage: 'No tienes permiso para buscar encomiendas.');
     final decoded = _api.decode(response, _listMessage);
-    if (decoded is! Map) {
+    if (decoded is! Map ||
+        decoded['disponibles'] is! List ||
+        decoded['tomadas'] is! List) {
       throw const AppFailure(_listMessage, code: 'invalid-response');
     }
     List<Shipment> part(String key) =>

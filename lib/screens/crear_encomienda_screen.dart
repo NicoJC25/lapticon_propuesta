@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../auth/auth_service.dart';
 import '../data/shipment_repository.dart';
+import '../data/flight_city.dart';
 import '../theme/app_theme.dart';
 import '../utils/format.dart';
 import '../widgets/access_components.dart';
@@ -165,6 +166,8 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
                 hint: 'Ciudad desde donde sale',
                 icon: Icons.trip_origin_rounded,
                 repository: repository,
+                allowedPlaces:
+                    FlightCity.values.map((city) => city.place).toList(),
                 enabled: enabled,
                 validator: (place) =>
                     place == null ? 'Elige la ciudad de origen.' : null,
@@ -175,6 +178,8 @@ class _CrearEncomiendaScreenState extends State<CrearEncomiendaScreen> {
                 hint: 'Ciudad a donde llega',
                 icon: Icons.place_outlined,
                 repository: repository,
+                allowedPlaces:
+                    FlightCity.values.map((city) => city.place).toList(),
                 enabled: enabled,
                 validator: _validateDestination,
                 onChanged: (place) => setState(() => _destination = place)),

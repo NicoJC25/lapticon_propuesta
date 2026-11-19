@@ -5,6 +5,7 @@ import '../utils/format.dart';
 import 'api_client.dart';
 import 'shipment_repository.dart';
 import 'flight_catalog.dart';
+import 'flight_city.dart';
 
 /// Estados de viaje que maneja la API.
 enum TripStatus {
@@ -47,8 +48,8 @@ class Trip {
     return Trip(
         id: text('_id'),
         flightNumber: text('numeroVuelo'),
-        origin: text('ciudadOrigen'),
-        destination: text('ciudadDestino'),
+        origin: FlightCity.canonicalName(text('ciudadOrigen')),
+        destination: FlightCity.canonicalName(text('ciudadDestino')),
         date: DateTime.tryParse(text('fechaViaje')),
         status: TripStatus.parse(json['estado']));
   }
@@ -67,8 +68,8 @@ class TripDraft {
 
   Map<String, Object?> toJson() => {
         'numeroVuelo': normalizeFlightNumber(flightNumber),
-        'ciudadOrigen': origin.city,
-        'ciudadDestino': destination.city,
+        'ciudadOrigen': FlightCity.canonicalName(origin.city),
+        'ciudadDestino': FlightCity.canonicalName(destination.city),
         'fechaViaje': isoDate(date),
       };
 }

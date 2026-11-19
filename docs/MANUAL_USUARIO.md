@@ -14,8 +14,8 @@ Al ingresar elige **Remitente** o **Viajero** si no tienes un rol recuperado. El
 
 ## Remitente
 
-1. Abre **Crear encomienda** y elige país y ciudad de origen y destino. Deben ser diferentes.
-2. Describe qué envías, elige moneda y escribe el valor ofrecido como entero positivo, sin separadores. El máximo del formulario es 100.000.000.
+1. Abre **Crear encomienda** y elige país y ciudad de origen y destino. Solo están habilitadas Bogotá, Medellín, Cali, New York, Miami y Washington. Origen y destino deben ser diferentes.
+2. Describe qué envías, elige pesos colombianos (COP) o dólares estadounidenses (USD) y escribe el valor ofrecido como entero positivo, sin separadores. El máximo del formulario es 100.000.000.
 3. Opcionalmente elige una fecha límite. La confirmación muestra la fecha devuelta por el servidor o indica que no la confirmó.
 4. Pulsa **Publicar encomienda**. Después puedes volver al menú o crear otra.
 5. En **Mis encomiendas**, consulta y filtra disponibles, tomadas, recibidas y vencidas. **Actualizar** recupera el estado del servidor.

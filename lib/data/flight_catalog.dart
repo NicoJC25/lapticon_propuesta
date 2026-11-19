@@ -2,6 +2,7 @@ import '../auth/auth_service.dart';
 import 'package:http/http.dart' as http;
 import 'api_client.dart';
 import 'shipment_repository.dart';
+import 'flight_city.dart';
 import 'trip_repository.dart';
 
 class AirportOption {
@@ -27,7 +28,10 @@ class FlightOption {
         DateTime.tryParse(departure) == null) {
       throw const FormatException('Invalid flight');
     }
+    // El municipio del aeropuerto puede ser Rionegro o Santiago de Cali.
+    // El IATA identifica la ciudad del servicio elegida por el usuario.
     Place place(String k) =>
+        FlightCity.fromIata(j[k]['iata'] as String)?.place ??
         Place(city: j[k]['city'] as String, country: j[k]['country'] as String);
     return FlightOption(
         number,
